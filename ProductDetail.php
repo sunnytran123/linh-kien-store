@@ -22,6 +22,17 @@ $stmt->execute();
 $result = $stmt->get_result();
 $row = $result->fetch_assoc();
 $product['tonkho'] = $row['tonkho'] ?? 0;
+
+// Lấy tất cả ảnh sản phẩm
+$images = [];
+$sql = "SELECT duongdan FROM hinhanhsanpham WHERE masanpham = ?";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $productId);
+$stmt->execute();
+$result = $stmt->get_result();
+while ($row = $result->fetch_assoc()) {
+    $images[] = $row['duongdan'];
+}
 ?>
 
 <!DOCTYPE html>
@@ -31,6 +42,8 @@ $product['tonkho'] = $row['tonkho'] ?? 0;
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chi tiết sản phẩm - Phụ Kiện Giá Rẻ</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -41,17 +54,17 @@ $product['tonkho'] = $row['tonkho'] ?? 0;
         }
         .top-bar {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            justify-content: center; /* căn giữa theo chiều ngang */
+            align-items: center;     /* căn giữa theo chiều dọc */
             background-color: #8BC34A;
             color: white;
-            padding: 15px 20px; /* Tăng padding để tăng chiều cao */
+            padding: 15px 20px;
             border-radius: 50px 80px 50px 80px;
             max-width:95%;
-            height: 70px; 
-            margin: 10px auto; /* Căn giữa */
-            flex-wrap: nowrap; /* Không xuống dòng */
-        }
+            height: 70px;
+            margin: 10px auto;
+            flex-wrap: nowrap;
+                }
 
         .top-info, .top-links {
             display: flex;
@@ -103,19 +116,29 @@ $product['tonkho'] = $row['tonkho'] ?? 0;
         }
 
         .breadcrumb {
+            display: flex;
+            align-items: center;
             padding: 15px 50px;
             background: #f5f5f5;
+            gap: 8px;
+            font-size: 16px;
         }
-
         .breadcrumb a {
             color: #8BC34A;
             text-decoration: none;
             font-size: 16px;
         }
-
         .breadcrumb span {
             color: #666;
             font-size: 16px;
+        }
+        .breadcrumb-separator {
+            color: #bbb;
+            font-size: 18px;
+            margin: 0 4px;
+            display: flex;
+            align-items: center;
+            user-select: none;
         }
 
         .product-detail {
@@ -128,21 +151,28 @@ $product['tonkho'] = $row['tonkho'] ?? 0;
 
         .product-gallery {
             flex: 1;
+            /* max-width: 420px; */
         }
-
-        .main-image {
+        #productCarousel {
             width: 100%;
-            height: 400px;
-            border: 1px solid #ddd;
+            height: 550px;
             border-radius: 8px;
             overflow: hidden;
+            background: #f5f5f5;
             margin-bottom: 20px;
         }
-
-        .main-image img {
+        #productCarousel .carousel-inner {
+            width: 100%;
+            height: 550px;
+        }
+        #productCarousel img {
             width: 100%;
             height: 100%;
             object-fit: contain;
+            display: block;
+            margin: 0 auto;
+            background: #f5f5f5;
+            border-radius: 8px;
         }
 
         .thumbnail-images {
@@ -297,6 +327,7 @@ $product['tonkho'] = $row['tonkho'] ?? 0;
             border-radius: 5px;
             white-space: pre-line;
             line-height: 0.8;
+            font-size: 40px;
         }
 
         .specs-list {
@@ -333,7 +364,8 @@ $product['tonkho'] = $row['tonkho'] ?? 0;
             border: none;
             background: none;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 24px;
+            font-weight: bold;
             color: #666;
             margin-bottom: 10px;
         }
@@ -625,18 +657,18 @@ $product['tonkho'] = $row['tonkho'] ?? 0;
 <body>
 <div class="top-bar">
         <div class="top-info">
-            <span><i class="fas fa-map-marker-alt"></i>Trà Vinh</span>
-            <span><i class="fas fa-envelope"></i>tuyenvt240384@sv-onuni.edu.vn</span>
+            <span><i class="fas fa-map-marker-alt"></i>Cà Mau</span>
+            <span><i class="fas fa-envelope"></i>phuongthuy091203@gmail.com</span>
         </div>
-        <div class="top-links">
+        <!-- <div class="top-links">
             <a href="#">Chính sách bảo mật</a> |
             <a href="#">Điều khoản sử dụng</a> |
             <a href="#">Hoàn trả & Đổi trả</a>
-        </div>
+        </div> -->
     </div>
 
     <header>
-        <a href="home.php" class="logo">TVeShop</a>
+        <a href="home.php" class="logo">Sunny Store</a>
         <nav>
             <a href="home.php">Trang chủ</a>
             <div class="dropdown">
@@ -679,26 +711,33 @@ $product['tonkho'] = $row['tonkho'] ?? 0;
     </header>
 
     <div class="breadcrumb">
-        <a href="home.php">Trang chủ</a> > 
-        <a href="?category=<?php echo $product['madanhmuc']; ?>"><?php echo $product['tendanhmuc']; ?></a> > 
+        <a href="home.php">Trang chủ</a>
+        <span class="breadcrumb-separator">&gt;</span>
+        <a href="?category=<?php echo $product['madanhmuc']; ?>"><?php echo $product['tendanhmuc']; ?></a>
+        <span class="breadcrumb-separator">&gt;</span>
         <span><?php echo $product['tensanpham']; ?></span>
     </div>
 
     <div class="product-detail">
         <div class="product-gallery">
-            <div class="main-image">
-                <img src="picture/<?php echo $product['duongdan']; ?>" alt="<?php echo $product['tensanpham']; ?>">
-            </div>
-            <div class="thumbnail-images">
-                <div class="thumbnail">
-                    <img src="picture/<?php echo $product['duongdan']; ?>" alt="<?php echo $product['tensanpham']; ?> - 1">
+            <div id="productCarousel" class="carousel slide" data-bs-ride="carousel">
+                <div class="carousel-inner">
+                    <?php foreach ($images as $idx => $img): ?>
+                        <div class="carousel-item <?php echo $idx === 0 ? 'active' : ''; ?>">
+                            <img src="picture/<?php echo $img; ?>" class="d-block w-100" alt="Ảnh sản phẩm">
+                        </div>
+                    <?php endforeach; ?>
                 </div>
-                <div class="thumbnail">
-                    <img src="picture/<?php echo $product['duongdan']; ?>" alt="<?php echo $product['tensanpham']; ?> - 2">
-                </div>
-                <div class="thumbnail">
-                    <img src="picture/<?php echo $product['duongdan']; ?>" alt="<?php echo $product['tensanpham']; ?> - 3">
-                </div>
+                <?php if (count($images) > 1): ?>
+                    <button class="carousel-control-prev" type="button" data-bs-target="#productCarousel" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Previous</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#productCarousel" data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Next</span>
+                    </button>
+                <?php endif; ?>
             </div>
         </div>
 
@@ -774,8 +813,8 @@ $product['tonkho'] = $row['tonkho'] ?? 0;
     <div style="max-width: 1200px; margin: 0 auto; padding: 0 20px;">
         <div class="product-description">
             <div class="description-tabs">
-                <button class="tab-button active">Mô tả sản phẩm</button>
-                <h3 style="margin-top: 10px;"><?php echo $product['tensanpham']; ?></h3>
+                 <button class="tab-button active">Mô tả sản phẩm</button>
+                <h5 style="margin-top: 10px;"><?php echo $product['tensanpham']; ?></h5>
                 <?php 
                 echo nl2br($product['mota']); 
                 ?>
