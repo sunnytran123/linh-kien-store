@@ -12,7 +12,7 @@ from openai import OpenAI
 from datetime import datetime
 
 # ========== CONFIG ==========
-client = OpenAI(api_key="...")
+# client = OpenAI(api_key=".")
 app = Flask(__name__)
 CORS(app)
 pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
