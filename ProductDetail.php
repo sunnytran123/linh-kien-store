@@ -13,6 +13,15 @@ if (!$product) {
     header('Location: home.php');
     exit();
 }
+
+// Lấy tổng tồn kho từ bảng sanpham_size
+$sql = "SELECT SUM(soluong) as tonkho FROM sanpham_size WHERE sanphamid = ?";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $productId);
+$stmt->execute();
+$result = $stmt->get_result();
+$row = $result->fetch_assoc();
+$product['tonkho'] = $row['tonkho'] ?? 0;
 ?>
 
 <!DOCTYPE html>
