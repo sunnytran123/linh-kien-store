@@ -227,16 +227,19 @@
             color: #8BC34A;
             font-weight: bold;
         }
-        .hero {
-        background-image: url('picture/nen2.jpg');
-        background-size: cover;
-        background-position: center;
+    .hero {
+        background-image: url('picture/nen.jpg');
+        background-size: contain; /* Giữ tỷ lệ hình ảnh và đảm bảo toàn bộ ảnh được hiển thị */
+        background-position: center; /* Căn giữa ảnh */
+        background-repeat: no-repeat; /* Ngừng lặp lại ảnh nền */
         width: 100%;
-        height: 300px; /* Điều chỉnh chiều cao phù hợp */
+        height: 50vh; /* Chiều cao có thể điều chỉnh theo ý muốn */
         display: flex;
         align-items: center;
         justify-content: center;
-        }
+        margin: 0 auto; /* Căn giữa */
+    }
+
         h1 {
             text-align: center;
             margin: 20px 0;
@@ -563,8 +566,8 @@
 <body>
     <div class="top-bar">
         <div class="top-info">
-            <span><i class="fas fa-map-marker-alt"></i>Trà Vinh</span>
-            <span><i class="fas fa-envelope"></i>tuyenvt240384@sv-onuni.edu.vn</span>
+            <span><i class="fas fa-map-marker-alt"></i>Cà Mau</span>
+            <span><i class="fas fa-envelope"></i>phuongthuy091203@gmail.com</span>
         </div>
         <div class="top-links">
             <a href="#">Chính sách bảo mật</a> |
@@ -619,7 +622,7 @@
     <div class="hero">
     </div>
 
-    <H1>Sản Phẩm Nổi Bật</H1>
+    <!-- <H1>Sản Phẩm Nổi Bật</H1> -->
     <div class="main-content">
         <aside class="sidebar">
             <div class="search-box">
@@ -662,10 +665,12 @@
                     $search = isset($_GET['search']) ? mysqli_real_escape_string($conn, $_GET['search']) : '';
 
                     // Query cơ bản
-                    $query = "SELECT DISTINCT sp.*, dm.tendanhmuc, ha.duongdan 
+                    $query = "SELECT sp.*, dm.tendanhmuc, ha.duongdan, 
+                              COALESCE(SUM(ss.soluong), 0) AS tong_ton_kho
                               FROM sanpham sp
                               LEFT JOIN danhmuc dm ON sp.madanhmuc = dm.danhmucid
                               LEFT JOIN hinhanhsanpham ha ON sp.sanphamid = ha.masanpham
+                              LEFT JOIN sanpham_size ss ON sp.sanphamid = ss.sanphamid
                               WHERE 1=1";
 
                     // Thêm điều kiện tìm kiếm
@@ -677,6 +682,9 @@
                     if (isset($_GET['category'])) {
                         $query .= " AND sp.madanhmuc = ?";
                     }
+
+                    // Thêm GROUP BY
+                    $query .= " GROUP BY sp.sanphamid";
 
                     // Thêm sắp xếp
                     if (isset($_GET['sort'])) {
