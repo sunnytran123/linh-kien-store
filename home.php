@@ -21,16 +21,16 @@
         }
         .top-bar {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            justify-content: center; /* căn giữa theo chiều ngang */
+            align-items: center;     /* căn giữa theo chiều dọc */
             background-color: #8BC34A;
             color: white;
-            padding: 15px 20px; /* Tăng padding để tăng chiều cao */
+            padding: 15px 20px;
             border-radius: 50px 80px 50px 80px;
             max-width:95%;
-            height: 70px; 
-            margin: 10px auto; /* Căn giữa */
-            flex-wrap: nowrap; /* Không xuống dòng */
+            height: 70px;
+            margin: 10px auto;
+            flex-wrap: nowrap;
         }
 
         .top-info, .top-links {
@@ -312,17 +312,24 @@
             color: #888;
         }
         @media (max-width: 768px) {
-            .top-bar {
+            /* .top-bar {
                 flex-direction: column;
                 height: auto;
                 padding: 10px;
                 gap: 10px;
-            }
+            } */
 
-            .top-info, .top-links {
+            /* .top-info, .top-links {
                 flex-wrap: wrap;
                 justify-content: center;
                 text-align: center;
+            } */
+            .top-info {
+            display: flex;
+            justify-content: center; /* Căn giữa theo chiều ngang */
+            align-items: center;     /* Căn giữa theo chiều dọc nếu cần */
+            gap: 20px;               /* Khoảng cách giữa các phần tử */
+            margin-top: 10px;
             }
 
             .footer-container {
@@ -561,23 +568,114 @@
                 justify-content: center;
             }
         }
+        .footer-map iframe {
+            width: 100%;
+            min-height: 320px;
+            max-width: 100%;
+            border-radius: 8px;
+            border: 0;
+        }
+        @media (max-width: 700px) {
+            .modal-content {
+                width: 98vw;
+                padding: 12px 2vw 12px 2vw;
+            }
+            .footer-map iframe {
+                min-height: 180px;
+                height: 180px;
+            }
+        }
+        .modal-overlay {
+          position: fixed;
+          z-index: 9999;
+          left: 0; top: 0; right: 0; bottom: 0;
+          background: rgba(0,0,0,0.4);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .modal-content {
+          background: #fff;
+          border-radius: 12px;
+          max-width: 98vw;
+          width: 600px;
+          padding: 32px 28px 28px 28px;
+          box-shadow: 0 2px 16px rgba(0,0,0,0.18);
+          position: relative;
+          animation: modalShow 0.2s;
+        }
+        .modal-content h2 {
+          text-align: center;
+          color: #8BC34A;
+          margin-bottom: 18px;
+          font-size: 1.7rem;
+          letter-spacing: 1px;
+        }
+        .contact-info {
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
+          margin-bottom: 18px;
+          align-items: flex-start;
+        }
+        .contact-info-row {
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          background: #f4f8f3;
+          border-radius: 8px;
+          padding: 10px 16px;
+          font-size: 1.05rem;
+          color: #333;
+          box-shadow: 0 1px 4px rgba(140,195,74,0.06);
+          transition: background 0.2s;
+        }
+        .contact-info-row:hover {
+          background: #e8f5e9;
+        }
+        .contact-info-row .icon {
+          background: #8BC34A;
+          color: #fff;
+          border-radius: 50%;
+          width: 36px;
+          height: 36px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 1.2rem;
+          transition: background 0.2s;
+        }
+        .contact-info-row:hover .icon {
+          background: #689f38;
+        }
+        @keyframes modalShow {
+          from { transform: translateY(-40px); opacity: 0;}
+          to { transform: translateY(0); opacity: 1;}
+        }
+        .close-modal {
+          position: absolute;
+          top: 10px; right: 16px;
+          font-size: 28px;
+          color: #888;
+          cursor: pointer;
+        }
     </style>
 </head>
 <body>
     <div class="top-bar">
-        <div class="top-info">
+        <div class="top-info" >
             <span><i class="fas fa-map-marker-alt"></i>Cà Mau</span>
             <span><i class="fas fa-envelope"></i>phuongthuy091203@gmail.com</span>
         </div>
-        <div class="top-links">
+        <!-- <div class="top-links">
             <a href="#">Chính sách bảo mật</a> |
             <a href="#">Điều khoản sử dụng</a> |
             <a href="#">Hoàn trả & Đổi trả</a>
-        </div>
+        </div> -->
     </div>
     
     <header>
-        <a href="home.php" class="logo">TVeShop</a>
+        <a href="home.php" class="logo">Sunny Store</a>
         <nav>
             <a href="home.php">Trang chủ</a>
             <div class="dropdown">
@@ -592,7 +690,7 @@
                 </ul>
             </div>
             <a href="promotion.php">Khuyến mãi</a>
-            <a href="https://www.facebook.com/messages/t/100053572991660">Liên hệ</a>
+            <a href="#" id="openContactModal">Liên hệ</a>
         </nav>
         
         <div class="header-icons">
@@ -838,9 +936,10 @@
         <div class="footer-container">
             <div class="footer-section">
                 <h3>Liên hệ</h3>
-                <p><i class="fas fa-map-marker-alt"></i>126 Nguyễn Thiện Thành</p>
-                <p><i class="fas fa-phone"></i> 0123 456 789</p>
-                <p><i class="fas fa-envelope"></i>tuyenvt@gmail.com</p>
+                <p><i class="fas fa-map-marker-alt"></i>164 Mỹ Tân</p>
+                <p><i class="fas fa-phone"></i> 0914 090 763</p>
+                <p><i class="fas fa-envelope"></i>phuongthuy091203@gmail.com</p>
+                <!-- Đã xóa bản đồ định vị Google Map ở đây, chỉ còn trong popup -->
             </div>
             
             <div class="footer-section">
@@ -865,6 +964,21 @@
             <p>&copy; 2025 Phụ Kiện Giá Rẻ. Mọi quyền được bảo lưu.</p>
         </div>
     </footer>
+    <!-- Modal Liên hệ -->
+    <div id="contactModal" class="modal-overlay" style="display:none;">
+      <div class="modal-content">
+        <span class="close-modal" id="closeContactModal">&times;</span>
+        <h2>Liên hệ Sunny Store</h2>
+        <div class="contact-info">
+          <div class="contact-info-row"><span class="icon"><i class="fas fa-map-marker-alt"></i></span>164 Mỹ Tân, Đầm Dơi, Cà Mau</div>
+          <div class="contact-info-row"><span class="icon"><i class="fas fa-phone"></i></span>0914090763</div>
+          <div class="contact-info-row"><span class="icon"><i class="fas fa-envelope"></i></span>phuongthuy091203@gmail.com</div>
+        </div>
+        <div class="footer-map" style="margin-top: 15px;">
+          <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d126076.99581562124!2d105.2371718!3d9.0723171!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31a1450040a46c09%3A0xbb0c457bde4f5702!2sCh%C3%AD%20Khanh!5e0!3m2!1svi!2s!4v1752059828388!5m2!1svi!2s" width="100%" height="320" style="border:0; border-radius:8px;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+        </div>
+      </div>
+    </div>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Lấy elements
@@ -897,6 +1011,16 @@
             window.location.href = window.location.pathname;
         }
     }
+    document.getElementById('openContactModal').onclick = function(e) {
+      e.preventDefault();
+      document.getElementById('contactModal').style.display = 'flex';
+    };
+    document.getElementById('closeContactModal').onclick = function() {
+      document.getElementById('contactModal').style.display = 'none';
+    };
+    document.getElementById('contactModal').onclick = function(e) {
+      if (e.target === this) this.style.display = 'none';
+    };
     </script>
 </body>
 </html>
