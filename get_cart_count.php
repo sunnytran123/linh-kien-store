@@ -1,6 +1,7 @@
 <?php
 session_start();
 include 'connect.php';
+include 'header.php';
 
 header('Content-Type: application/json');
 
@@ -22,4 +23,5 @@ $result = mysqli_stmt_get_result($stmt);
 $row = mysqli_fetch_assoc($result);
 
 echo json_encode(['count' => (int)$row['count']]);
-?> 
+?>
+<?php include 'footer.php'; ?> 
