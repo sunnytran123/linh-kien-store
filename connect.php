@@ -80,7 +80,7 @@
         global $conn;
         
         // Sử dụng prepared statement để tránh SQL injection
-        $sql = "SELECT * FROM nguoi_dung WHERE email = ? AND mat_khau = ? LIMIT 1";
+        $sql = "SELECT * FROM bạn hayxcnguoi_dung WHERE email = ? AND mat_khau = ? LIMIT 1";
         $stmt = mysqli_prepare($conn, $sql);
         mysqli_stmt_bind_param($stmt, "ss", $email, $pass);
         mysqli_stmt_execute($stmt);
@@ -223,9 +223,8 @@
     }
 
     // Hàm thêm sản phẩm vào giỏ hàng
-    function addToCart($userId, $productId, $quantity = 1, $sizeId = 0) {
+    function addToCart($userId, $productId, $quantity = 1, $sizeId = 0, $colorId = 0) {
         global $conn;
-        
         try {
             // Lấy tổng tồn kho từ bảng sanpham_size cho size cụ thể
             $sql = "SELECT soluong FROM sanpham_size WHERE sanphamid = ? AND sizeid = ?";
@@ -235,22 +234,19 @@
             $result = mysqli_stmt_get_result($stmt);
             $product = mysqli_fetch_assoc($result);
             $tonkho = $product['soluong'] ?? 0;
-            
             if ($tonkho === null) {
                 return ['success' => false, 'message' => 'Không tìm thấy sản phẩm hoặc tồn kho size này'];
             }
-            
-            // Kiểm tra giỏ hàng hiện tại của user với sản phẩm và size
+            // Kiểm tra giỏ hàng hiện tại của user với sản phẩm, size, màu
             $sql = "SELECT g.giohangid, cg.chitietgiohangid, cg.soluong 
                     FROM giohang g 
-                    LEFT JOIN chitietgiohang cg ON g.giohangid = cg.magiohang AND cg.masanpham = ? AND cg.sizeid = ?
+                    LEFT JOIN chitietgiohang cg ON g.giohangid = cg.magiohang AND cg.masanpham = ? AND cg.sizeid = ? AND cg.mausacid = ?
                     WHERE g.manguoidung = ?";
             $stmt = mysqli_prepare($conn, $sql);
-            mysqli_stmt_bind_param($stmt, "iii", $productId, $sizeId, $userId);
+            mysqli_stmt_bind_param($stmt, "iiii", $productId, $sizeId, $colorId, $userId);
             mysqli_stmt_execute($stmt);
             $result = mysqli_stmt_get_result($stmt);
             $cartInfo = mysqli_fetch_assoc($result);
-            
             // Nếu chưa có giỏ hàng, tạo mới
             if (!$cartInfo || !$cartInfo['giohangid']) {
                 $sql = "INSERT INTO giohang (manguoidung) VALUES (?)";
@@ -261,35 +257,30 @@
             } else {
                 $cartId = $cartInfo['giohangid'];
             }
-            
             // Tính toán số lượng mới
             $newQuantity = $quantity;
             if ($cartInfo && $cartInfo['chitietgiohangid']) {
                 $newQuantity += $cartInfo['soluong'];
             }
-            
             // Kiểm tra tồn kho với số lượng mới
             if ($newQuantity > $tonkho) {
                 return ['success' => false, 'message' => 'Số lượng vượt quá tồn kho size này'];
             }
-            
             // Cập nhật hoặc thêm mới chi tiết giỏ hàng
             if ($cartInfo && $cartInfo['chitietgiohangid']) {
                 $sql = "UPDATE chitietgiohang SET soluong = ? WHERE chitietgiohangid = ?";
                 $stmt = mysqli_prepare($conn, $sql);
                 mysqli_stmt_bind_param($stmt, "ii", $newQuantity, $cartInfo['chitietgiohangid']);
             } else {
-                $sql = "INSERT INTO chitietgiohang (magiohang, masanpham, sizeid, soluong) VALUES (?, ?, ?, ?)";
+                $sql = "INSERT INTO chitietgiohang (magiohang, masanpham, sizeid, mausacid, soluong) VALUES (?, ?, ?, ?, ?)";
                 $stmt = mysqli_prepare($conn, $sql);
-                mysqli_stmt_bind_param($stmt, "iiii", $cartId, $productId, $sizeId, $newQuantity);
+                mysqli_stmt_bind_param($stmt, "iiiii", $cartId, $productId, $sizeId, $colorId, $newQuantity);
             }
-            
             if (mysqli_stmt_execute($stmt)) {
                 return ['success' => true];
             } else {
                 return ['success' => false, 'message' => 'Lỗi khi cập nhật giỏ hàng'];
             }
-            
         } catch (Exception $e) {
             return ['success' => false, 'message' => 'Lỗi: ' . $e->getMessage()];
         }

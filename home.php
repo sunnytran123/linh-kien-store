@@ -1,8 +1,9 @@
 <?php
-    session_start();  // Thêm dòng này ở đầu file
+    if (session_status() == PHP_SESSION_NONE) {
+        session_start();  // Bắt đầu session nếu chưa có
+    }
     require_once 'connect.php';
-    require_once 'functions.php';  // Thêm dòng này
-    // Kiểm tra session
+    require_once 'functions.php';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -662,61 +663,8 @@
     </style>
 </head>
 <body>
-    <div class="top-bar">
-        <div class="top-info" >
-            <span><i class="fas fa-map-marker-alt"></i>Cà Mau</span>
-            <span><i class="fas fa-envelope"></i>phuongthuy091203@gmail.com</span>
-        </div>
-        <!-- <div class="top-links">
-            <a href="#">Chính sách bảo mật</a> |
-            <a href="#">Điều khoản sử dụng</a> |
-            <a href="#">Hoàn trả & Đổi trả</a>
-        </div> -->
-    </div>
+<?php include 'header.php'; ?>
     
-    <header>
-        <a href="home.php" class="logo">Sunny Store</a>
-        <nav>
-            <a href="home.php">Trang chủ</a>
-            <div class="dropdown">
-                <a href="#">Danh Mục</a>
-                <ul class="dropdown-menu">
-                    <?php
-                        $categories = getCategoriesWithCount();
-                        while($cat = mysqli_fetch_assoc($categories)) {
-                            echo "<li><a href='?category={$cat['danhmucid']}'>{$cat['tendanhmuc']}</a></li>";
-                        }
-                    ?>
-                </ul>
-            </div>
-            <a href="promotion.php">Khuyến mãi</a>
-            <a href="#" id="openContactModal">Liên hệ</a>
-        </nav>
-        
-        <div class="header-icons">
-            <a href="cart.php">
-                <i class="fas fa-shopping-cart"></i> 
-                Giỏ hàng
-                <?php if(isset($_SESSION['id'])): ?>
-                    <span class="cart-count"><?php echo getCartItemCount($_SESSION['id']); ?></span>
-                <?php endif; ?>
-            </a>
-            <?php if(isset($_SESSION['id'])): ?>
-                <div class="dropdown">
-                    <a href="#" class="dropdown-toggle">
-                        <i class="fas fa-user"></i> <?php echo $_SESSION['ten_dang_nhap']; ?>
-                    </a>
-                    <ul class="dropdown-menu">
-                        <li><a href="order_history.php"><i class="fas fa-history"></i> Lịch sử</a></li>
-                        <li><a href="logout.php"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a></li>
-                    </ul>
-                </div>
-            <?php else: ?>
-                <a href="login.php"><i class="fas fa-user"></i> Đăng nhập</a>
-            <?php endif; ?>
-        </div>        
-    </header>
-
     <div class="hero">
     </div>
 
@@ -932,38 +880,7 @@
             </div>
         </main>
     </div>
-    <footer>
-        <div class="footer-container">
-            <div class="footer-section">
-                <h3>Liên hệ</h3>
-                <p><i class="fas fa-map-marker-alt"></i>164 Mỹ Tân</p>
-                <p><i class="fas fa-phone"></i> 0914 090 763</p>
-                <p><i class="fas fa-envelope"></i>phuongthuy091203@gmail.com</p>
-                <!-- Đã xóa bản đồ định vị Google Map ở đây, chỉ còn trong popup -->
-            </div>
-            
-            <div class="footer-section">
-                <h3>Liên kết nhanh</h3>
-                <ul>
-                    <li><a href="#"><i class="fas fa-home"></i> Trang chủ</a></li>
-                    <li><a href="#"><i class="fas fa-shopping-bag"></i> Sản phẩm</a></li>
-                    <li><a href="#"><i class="fas fa-tags"></i> Khuyến mãi</a></li>
-                    <li><a href="#"><i class="fas fa-shield-alt"></i> Chính sách bảo hành</a></li>
-                </ul>
-            </div>
-    
-            <div class="footer-section">
-                <h3>Kết nối với chúng tôi</h3>
-                <a href="#"><i class="fab fa-facebook"></i> Facebook</a>
-                <a href="#"><i class="fab fa-youtube"></i> YouTube</a>
-                <a href="#"><i class="fab fa-instagram"></i> Instagram</a>
-            </div>
-        
-        </div>
-        <div class="footer-bottom">
-            <p>&copy; 2025 Phụ Kiện Giá Rẻ. Mọi quyền được bảo lưu.</p>
-        </div>
-    </footer>
+<?php include 'footer.php'; ?>
     <!-- Modal Liên hệ -->
     <div id="contactModal" class="modal-overlay" style="display:none;">
       <div class="modal-content">

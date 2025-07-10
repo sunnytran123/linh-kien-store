@@ -19,7 +19,7 @@ if (!isset($_SESSION['id']) || !isset($_SESSION['loai'])) {
         font-family: Arial, sans-serif;
     }
     .cart-container {
-        max-width: 1200px;
+        max-width: 1350px;
         margin: 20px auto;
         padding: 20px;
     }
@@ -461,11 +461,13 @@ if (!isset($_SESSION['id']) || !isset($_SESSION['loai'])) {
     <h1 style="text-align: center; font-size: 30px; font-weight: bold;padding-bottom: 20px;">Giỏ hàng của bạn</h1>
     
     <?php
-    $sql = "SELECT g.*, c.soluong, c.chitietgiohangid, c.masanpham, s.tensanpham, s.gia, h.duongdan 
+    $sql = "SELECT g.*, c.soluong, c.chitietgiohangid, c.masanpham, c.sizeid, c.mausacid, s.tensanpham, s.gia, h.duongdan, sz.kichco, ms.tenmau, ms.mamau 
             FROM giohang g 
             JOIN chitietgiohang c ON g.giohangid = c.magiohang
             JOIN sanpham s ON c.masanpham = s.sanphamid 
             LEFT JOIN hinhanhsanpham h ON s.sanphamid = h.masanpham 
+            LEFT JOIN size sz ON c.sizeid = sz.sizeid
+            LEFT JOIN mausac ms ON c.mausacid = ms.mausacid
             WHERE g.manguoidung = ?
             GROUP BY c.chitietgiohangid";
     $stmt = $conn->prepare($sql);
@@ -477,17 +479,18 @@ if (!isset($_SESSION['id']) || !isset($_SESSION['loai'])) {
         <!-- Select All Container -->
         <div class="select-all-container">
             <input type="checkbox" id="selectAll" style="width: 18px; height: 18px;">
-            <label for="selectAll">Chọn tất cả sản phẩm</label>
+            <label for="selectAll">Sản phẩm</label>
         </div>
         
         <table class="cart-table">
             <thead>
                 <tr>
                     <th width="5%"></th>
-                    <th width="35%">Sản phẩm</th>
-                    <th width="20%">Giá</th>
+                    <th width="30%">Sản phẩm</th>
+                    <th width="15%">Phân loại</th>
+                    <th width="15%">Giá</th>
                     <th width="15%">Số lượng</th>
-                    <th width="15%">Tổng</th>
+                    <th width="10%">Tổng</th>
                     <th width="10%">Xóa</th>
                 </tr>
             </thead>
@@ -510,6 +513,15 @@ if (!isset($_SESSION['id']) || !isset($_SESSION['loai'])) {
                     <td class="product-info">
                         <img src="picture/<?php echo $row['duongdan']; ?>" alt="<?php echo $row['tensanpham']; ?>">
                         <span><?php echo $row['tensanpham']; ?></span>
+                    </td>
+                    <td class="variant-info">
+                        <span class="variant-badge" style="background:<?php echo $row['mamau']; ?>;color:#333;padding:2px 8px;border-radius:6px;display:inline-block;min-width:40px;">
+                            <?php echo $row['tenmau'] ? htmlspecialchars($row['tenmau']) : 'Chưa chọn'; ?>
+                        </span>
+                        <span class="variant-badge" style="background:#eee;color:#333;padding:2px 8px;border-radius:6px;display:inline-block;min-width:30px;margin-left:6px;">
+                            <?php echo $row['kichco'] ? htmlspecialchars($row['kichco']) : 'Chưa chọn'; ?>
+                        </span>
+                        <button class="edit-variant-btn" style="margin-left:8px;cursor:pointer;background:none;border:none;color:#8BC34A;font-size:16px;" onclick="openEditVariantModal(<?php echo $row['chitietgiohangid']; ?>)"><i class="fas fa-edit"></i></button>
                     </td>
                     <td class="price-info">
                         <?php if ($promotion): ?>

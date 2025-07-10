@@ -1022,6 +1022,13 @@ foreach ($colors as $cl) {
                 return;
             }
             const sizeId = activeSizeBtn.getAttribute('data-size-id');
+            // Lấy colorid từ nút màu đang active
+            const activeColorBtn = document.querySelector('.color-btn.active');
+            if (!activeColorBtn) {
+                alert('Vui lòng chọn màu sắc');
+                return;
+            }
+            const colorId = activeColorBtn.getAttribute('data-color-id');
             if (isNaN(quantity) || quantity <= 0) {
                 alert('Vui lòng nhập số lượng hợp lệ');
                 return;
@@ -1031,7 +1038,7 @@ foreach ($colors as $cl) {
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
                 },
-                body: `product_id=${productId}&quantity=${quantity}&sizeid=${sizeId}`
+                body: `product_id=${productId}&quantity=${quantity}&sizeid=${sizeId}&colorid=${colorId}`
             })
             .then(response => response.json())
             .then(data => {
