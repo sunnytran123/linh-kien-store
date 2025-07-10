@@ -27,6 +27,7 @@ if (!isset($_SESSION['id']) || !isset($_SESSION['loai'])) {
         width: 100%;
         border-collapse: collapse;
     }
+    
     .cart-table th, .cart-table td {
         padding: 15px;
         text-align: left;
@@ -486,9 +487,9 @@ if (!isset($_SESSION['id']) || !isset($_SESSION['loai'])) {
             <thead>
                 <tr>
                     <th width="5%"></th>
-                    <th width="30%">Sản phẩm</th>
-                    <th width="15%">Phân loại</th>
-                    <th width="15%">Giá</th>
+                    <th width="20%">Sản phẩm</th>
+                    <th width="20%">Phân loại</th>
+                    <th width="10%">Giá</th>
                     <th width="15%">Số lượng</th>
                     <th width="10%">Tổng</th>
                     <th width="10%">Xóa</th>
@@ -515,7 +516,7 @@ if (!isset($_SESSION['id']) || !isset($_SESSION['loai'])) {
                         <span><?php echo $row['tensanpham']; ?></span>
                     </td>
                     <td class="variant-info">
-                        <span class="variant-badge" style="background:<?php echo $row['mamau']; ?>;color:#333;padding:2px 8px;border-radius:6px;display:inline-block;min-width:40px;">
+                        <span class="variant-badge" style="background:none;color:#333;padding:2px 8px;border-radius:6px;display:inline-block;min-width:40px;">
                             <?php echo $row['tenmau'] ? htmlspecialchars($row['tenmau']) : 'Chưa chọn'; ?>
                         </span>
                         <span class="variant-badge" style="background:#eee;color:#333;padding:2px 8px;border-radius:6px;display:inline-block;min-width:30px;margin-left:6px;">
