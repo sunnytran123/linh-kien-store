@@ -1,5 +1,7 @@
 <?php
-session_start();
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
 require_once 'connect.php';
 require_once 'functions.php';
 // Kiểm tra session
@@ -745,62 +747,7 @@ nav .dropdown-menu li a:hover {
 </style>
 </head>
 <body>
-<div class="top-bar">
-    <div class="top-info">
-        <div class="contact-info">
-            <div><i class="fas fa-map-marker-alt"></i>Trà Vinh</div>
-            <div><i class="fas fa-envelope"></i>tuyenvt240384@sv-onuni.edu.vn</div>
-        </div>
-    </div>
-    <div class="top-links">
-        <a href="#">Chính sách bảo mật</a> |
-        <a href="#">Điều khoản sử dụng</a> |
-        <a href="#">Hoàn trả & Đổi trả</a>
-    </div>
-</div>
-
-<header>
-    <a href="home.php" class="logo">TVeShop</a>
-    <nav>
-        <a href="home.php">Trang chủ</a>
-        <div class="dropdown">
-            <a href="#">Danh Mục</a>
-            <ul class="dropdown-menu">
-                <?php
-                    $categories = getCategoriesWithCount();
-                    while($cat = mysqli_fetch_assoc($categories)) {
-                        echo "<li><a href='?category={$cat['danhmucid']}'>{$cat['tendanhmuc']}</a></li>";
-                    }
-                ?>
-            </ul>
-        </div>
-        <a href="promotion.php">Khuyến mãi</a>
-        <a href="https://www.facebook.com/messages/t/100053572991660">Liên hệ</a>
-    </nav>
-    
-    <div class="header-icons">
-        <a href="cart.php">
-            <i class="fas fa-shopping-cart"></i> 
-            Giỏ hàng
-            <?php if(isset($_SESSION['id'])): ?>
-                <span class="cart-count"><?php echo getCartItemCount($_SESSION['id']); ?></span>
-            <?php endif; ?>
-        </a>
-        <?php if(isset($_SESSION['id'])): ?>
-            <div class="dropdown">
-                <a href="#" class="dropdown-toggle">
-                    <i class="fas fa-user"></i> <?php echo $_SESSION['ten_dang_nhap']; ?>
-                </a>
-                <ul class="dropdown-menu">
-                    <li><a href="order_history.php"><i class="fas fa-history"></i> Lịch sử</a></li>
-                    <li><a href="logout.php"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a></li>
-                </ul>
-            </div>
-        <?php else: ?>
-            <a href="login.php"><i class="fas fa-user"></i> Đăng nhập</a>
-        <?php endif; ?>
-    </div>        
-</header>
+<?php include 'header.php'; ?>
 <div class="cart-container">
     <h1 style="text-align: center; font-size: 30px; font-weight: bold;padding-bottom: 20px;">Giỏ hàng của bạn</h1>
     <table class="cart-table">
@@ -886,37 +833,7 @@ nav .dropdown-menu li a:hover {
     <?php endif; ?>
 </div>
 
-<footer>
-    <div class="footer-container">
-        <div class="footer-section">
-            <h3>Liên hệ</h3>
-            <p><i class="fas fa-map-marker-alt"></i>126 Nguyễn Thiện Thành</p>
-            <p><i class="fas fa-phone"></i> 0123 456 789</p>
-            <p><i class="fas fa-envelope"></i>tuyenvt@gmail.com</p>
-        </div>
-        
-        <div class="footer-section">
-            <h3>Liên kết nhanh</h3>
-            <ul>
-                <li><a href="#"><i class="fas fa-home"></i> Trang chủ</a></li>
-                <li><a href="#"><i class="fas fa-shopping-bag"></i> Sản phẩm</a></li>
-                <li><a href="#"><i class="fas fa-tags"></i> Khuyến mãi</a></li>
-                <li><a href="#"><i class="fas fa-shield-alt"></i> Chính sách bảo hành</a></li>
-            </ul>
-        </div>
-
-        <div class="footer-section">
-            <h3>Kết nối với chúng tôi</h3>
-            <a href="#"><i class="fab fa-facebook"></i> Facebook</a>
-            <a href="#"><i class="fab fa-youtube"></i> YouTube</a>
-            <a href="#"><i class="fab fa-instagram"></i> Instagram</a>
-        </div>
-    </div>
-
-    <div class="footer-bottom">
-        <p>&copy; 2025 Phụ Kiện Giá Rẻ. Mọi quyền được bảo lưu.</p>
-    </div>
-</footer>
+<?php include 'footer.php'; ?>
 
 <script>
 // Thêm function tính tổng khi checkbox thay đổi

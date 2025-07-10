@@ -33,6 +33,46 @@ $result = $stmt->get_result();
 while ($row = $result->fetch_assoc()) {
     $images[] = $row['duongdan'];
 }
+
+// Lấy danh sách size còn hàng cho sản phẩm
+$sizes = [];
+$sql = "SELECT sz.sizeid, sz.kichco, ss.soluong
+        FROM sanpham_size ss
+        JOIN size sz ON ss.sizeid = sz.sizeid
+        WHERE ss.sanphamid = ? AND ss.soluong > 0";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $productId);
+$stmt->execute();
+$result = $stmt->get_result();
+while ($row = $result->fetch_assoc()) {
+    $sizes[] = $row;
+}
+
+// Lấy danh sách màu cho sản phẩm
+$colors = [];
+$sql = "SELECT ms.mausacid, ms.tenmau, ms.mamau
+        FROM sanpham_mausac sm
+        JOIN mausac ms ON sm.mausacid = ms.mausacid
+        WHERE sm.sanphamid = ?";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $productId);
+$stmt->execute();
+$result = $stmt->get_result();
+while ($row = $result->fetch_assoc()) {
+    $colors[] = $row;
+}
+
+// Chuẩn bị dữ liệu màu: kiểm tra màu nào còn size còn hàng
+$colorAvailable = [];
+foreach ($colors as $cl) {
+    $sql = "SELECT COUNT(*) as cnt FROM sanpham_size ss JOIN sanpham_mausac sm ON ss.sanphamid = sm.sanphamid WHERE ss.sanphamid = ? AND sm.mausacid = ? AND ss.soluong > 0";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("ii", $productId, $cl['mausacid']);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $row = $result->fetch_assoc();
+    $colorAvailable[$cl['mausacid']] = $row['cnt'] > 0;
+}
 ?>
 
 <!DOCTYPE html>
@@ -652,63 +692,155 @@ while ($row = $result->fetch_assoc()) {
             background: #f5f5f5;
             color: #8BC34A;
         }
+        .color-options, .size-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 18px;
+            align-items: center;
+        }
+        .color-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 2px solid #eee;
+            border-radius: 8px;
+            background: #fff;
+            padding: 8px 16px 8px 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: border 0.2s, box-shadow 0.2s;
+            min-width: 80px;
+            min-height: 40px;
+            position: relative;
+        }
+        .color-btn .color-dot {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 1.5px solid #ccc;
+            display: inline-block;
+            background: #eee;
+        }
+        .color-btn.active, .color-btn:hover {
+            border: 2px solid #8BC34A;
+            box-shadow: 0 2px 8px rgba(140,195,74,0.08);
+        }
+        .size-btn {
+            border: 2px solid #eee;
+            border-radius: 8px;
+            background: #fff;
+            padding: 8px 24px;
+            font-size: 16px;
+            cursor: pointer;
+            min-width: 60px;
+            min-height: 40px;
+            transition: border 0.2s, box-shadow 0.2s;
+            margin-right: 10px;
+        }
+        .size-btn.active, .size-btn:hover {
+            border: 2px solid #8BC34A;
+            box-shadow: 0 2px 8px rgba(140,195,74,0.08);
+        }
+        .size-btn:disabled, .color-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .product-options-label {
+            min-width: 90px;
+            display: inline-block;
+            font-size: 16px;
+            color: #444;
+            margin-bottom: 6px;
+        }
+        .modal-overlay {
+            position: fixed;
+            z-index: 9999;
+            left: 0; top: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background: #fff;
+            border-radius: 12px;
+            max-width: 98vw;
+            width: 600px;
+            padding: 32px 28px 28px 28px;
+            box-shadow: 0 2px 16px rgba(0,0,0,0.18);
+            position: relative;
+            animation: modalShow 0.2s;
+        }
+        .modal-content h2 {
+            text-align: center;
+            color: #8BC34A;
+            margin-bottom: 18px;
+            font-size: 1.7rem;
+            letter-spacing: 1px;
+        }
+        .contact-info {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            margin-bottom: 18px;
+            align-items: flex-start;
+        }
+        .contact-info-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            background: #f4f8f3;
+            border-radius: 8px;
+            padding: 10px 16px;
+            font-size: 1.05rem;
+            color: #333;
+            box-shadow: 0 1px 4px rgba(140,195,74,0.06);
+            transition: background 0.2s;
+        }
+        .contact-info-row:hover {
+            background: #e8f5e9;
+        }
+        .contact-info-row .icon {
+            background: #8BC34A;
+            color: #fff;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            transition: background 0.2s;
+        }
+        .contact-info-row:hover .icon {
+            background: #689f38;
+        }
+        @keyframes modalShow {
+            from { transform: translateY(-40px); opacity: 0;}
+            to { transform: translateY(0); opacity: 1;}
+        }
+        .close-modal {
+            position: absolute;
+            top: 10px; right: 16px;
+            font-size: 28px;
+            color: #888;
+            cursor: pointer;
+        }
+        @media (max-width: 700px) {
+            .modal-content {
+                width: 98vw;
+                padding: 12px 2vw 12px 2vw;
+            }
+            .footer-map iframe {
+                min-height: 180px;
+                height: 180px;
+            }
+        }
     </style>
 </head>
 <body>
-<div class="top-bar">
-        <div class="top-info">
-            <span><i class="fas fa-map-marker-alt"></i>Cà Mau</span>
-            <span><i class="fas fa-envelope"></i>phuongthuy091203@gmail.com</span>
-        </div>
-        <!-- <div class="top-links">
-            <a href="#">Chính sách bảo mật</a> |
-            <a href="#">Điều khoản sử dụng</a> |
-            <a href="#">Hoàn trả & Đổi trả</a>
-        </div> -->
-    </div>
-
-    <header>
-        <a href="home.php" class="logo">Sunny Store</a>
-        <nav>
-            <a href="home.php">Trang chủ</a>
-            <div class="dropdown">
-                <a href="#">Danh Mục</a>
-                <ul class="dropdown-menu">
-                    <?php
-                        $categories = getCategoriesWithCount();
-                        while($cat = mysqli_fetch_assoc($categories)) {
-                            echo "<li><a href='?category={$cat['danhmucid']}'>{$cat['tendanhmuc']}</a></li>";
-                        }
-                    ?>
-                </ul>
-            </div>
-            <a href="promotion.php">Khuyến mãi</a>
-            <a href="https://www.facebook.com/messages/t/100053572991660">Liên hệ</a>
-        </nav>
-        
-        <div class="header-icons">
-            <a href="cart.php">
-                <i class="fas fa-shopping-cart"></i> 
-                Giỏ hàng
-                <?php if(isset($_SESSION['id'])): ?>
-                    <span class="cart-count"><?php echo getCartItemCount($_SESSION['id']); ?></span>
-                <?php endif; ?>
-            </a>
-            <?php if(isset($_SESSION['id'])): ?>
-                <div class="dropdown">
-                    <a href="#" class="dropdown-toggle">
-                        <i class="fas fa-user"></i> <?php echo $_SESSION['ten_dang_nhap']; ?>
-                    </a>
-                    <ul class="dropdown-menu">
-                        <li><a href="order_history.php"><i class="fas fa-history"></i> Lịch sử</a></li>
-                        <li><a href="logout.php"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a></li>
-                    </ul>
-                </div>
-            <?php else: ?>
-                <a href="login.php"><i class="fas fa-user"></i> Đăng nhập</a>
-            <?php endif; ?>
-        </div>        
-    </header>
+<?php include 'header.php'; ?>
 
     <div class="breadcrumb">
         <a href="home.php">Trang chủ</a>
@@ -769,6 +901,33 @@ while ($row = $result->fetch_assoc()) {
             </div>
 
             <div class="product-actions">
+                <div class="product-options" style="margin-bottom: 16px;">
+                    <?php if (count($colors) > 0): ?>
+                        <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                            <span class="product-options-label">Màu Sắc</span>
+                            <div class="color-options">
+                                <?php foreach ($colors as $cl): ?>
+                                    <button type="button" class="color-btn" data-color-id="<?php echo $cl['mausacid']; ?>" style="<?php if($cl['mamau']) echo 'background: #fff;'; ?>" <?php echo !$colorAvailable[$cl['mausacid']] ? 'disabled' : ''; ?>>
+                                        <span class="color-dot" style="background: <?php echo htmlspecialchars($cl['mamau']); ?>;"></span>
+                                        <?php echo htmlspecialchars($cl['tenmau']); ?>
+                                    </button>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+                    <?php if (count($sizes) > 0): ?>
+                        <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                            <span class="product-options-label">Size</span>
+                            <div class="size-options">
+                                <?php foreach ($sizes as $sz): ?>
+                                    <button type="button" class="size-btn" data-size-id="<?php echo $sz['sizeid']; ?>" <?php echo $sz['soluong'] <= 0 ? 'disabled' : ''; ?>>
+                                        <?php echo htmlspecialchars($sz['kichco']); ?>
+                                    </button>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+                </div>
                 <div class="quantity-selector">
                     <button onclick="decreaseQuantity()" <?php echo $product['tonkho'] <= 0 ? 'disabled' : ''; ?>>-</button>
                     <input type="number" id="quantity" value="1" min="1" max="<?php echo $product['tonkho']; ?>" 
@@ -821,37 +980,22 @@ while ($row = $result->fetch_assoc()) {
             </div>
         </div>
     </div>
-    <footer>
-        <div class="footer-container">
-            <div class="footer-section">
-                <h3>Liên hệ</h3>
-                <p><i class="fas fa-map-marker-alt"></i> 126 Nguyễn Thiện Thành</p>
-                <p><i class="fas fa-phone"></i> 0123 456 789</p>
-                <p><i class="fas fa-envelope"></i>tuyenvt@gmail.com</p>
-            </div>
-            
-            <div class="footer-section">
-                <h3>Liên kết nhanh</h3>
-                <ul>                    
-                    <li><a href="#"><i class="fas fa-home"></i> Trang chủ</a></li>
-                    <li><a href="#"><i class="fas fa-shopping-bag"></i> Sản phẩm</a></li>
-                    <li><a href="#"><i class="fas fa-tags"></i> Khuyến mãi</a></li>
-                    <li><a href="#"><i class="fas fa-shield-alt"></i> Chính sách bảo hành</a></li>
-                </ul>
-            </div>
-    
-            <div class="footer-section">
-                <h3>Kết nối với chúng tôi</h3>
-                <a href="#"><i class="fab fa-facebook"></i> Facebook</a>
-                <a href="#"><i class="fab fa-youtube"></i> YouTube</a>
-                <a href="#"><i class="fab fa-instagram"></i> Instagram</a>
-            </div>
-        </div>
-    
-        <div class="footer-bottom">
-            <p>&copy; 2025 Phụ Kiện Giá Rẻ. Mọi quyền được bảo lưu.</p>
-        </div>
-    </footer>
+    <?php include 'footer.php'; ?>
+
+    <div id="contactModal" class="modal-overlay" style="display:none;">
+    <div class="modal-content">
+      <span class="close-modal" id="closeContactModal">&times;</span>
+      <h2>Liên hệ Sunny Store</h2>
+      <div class="contact-info">
+        <div class="contact-info-row"><span class="icon"><i class="fas fa-map-marker-alt"></i></span>164 Mỹ Tân, Đầm Dơi, Cà Mau</div>
+        <div class="contact-info-row"><span class="icon"><i class="fas fa-phone"></i></span>0914090763</div>
+        <div class="contact-info-row"><span class="icon"><i class="fas fa-envelope"></i></span>phuongthuy091203@gmail.com</div>
+      </div>
+      <div class="footer-map" style="margin-top: 15px;">
+        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d126076.99581562124!2d105.2371718!3d9.0723171!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31a1450040a46c09%3A0xbb0c457bde4f5702!2sCh%C3%AD%20Khanh!5e0!3m2!1svi!2s!4v1752059828388!5m2!1svi!2s" width="100%" height="320" style="border:0; border-radius:8px;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+      </div>
+    </div>
+  </div>
 
     <script>
         function decreaseQuantity() {
@@ -871,18 +1015,23 @@ while ($row = $result->fetch_assoc()) {
 
         function addToCart(productId) {
             const quantity = parseInt(document.getElementById('quantity').value);
-            
+            // Lấy sizeid từ nút size đang active
+            const activeSizeBtn = document.querySelector('.size-btn.active');
+            if (!activeSizeBtn) {
+                alert('Vui lòng chọn size');
+                return;
+            }
+            const sizeId = activeSizeBtn.getAttribute('data-size-id');
             if (isNaN(quantity) || quantity <= 0) {
                 alert('Vui lòng nhập số lượng hợp lệ');
                 return;
             }
-            
             fetch('add_to_cart.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
                 },
-                body: `product_id=${productId}&quantity=${quantity}`
+                body: `product_id=${productId}&quantity=${quantity}&sizeid=${sizeId}`
             })
             .then(response => response.json())
             .then(data => {
@@ -929,6 +1078,34 @@ while ($row = $result->fetch_assoc()) {
                 alert('Có lỗi xảy ra khi kết nối với server');
             });
         }
+
+        // Chọn màu
+        const colorBtns = document.querySelectorAll('.color-btn');
+        colorBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                colorBtns.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+        // Chọn size
+        const sizeBtns = document.querySelectorAll('.size-btn');
+        sizeBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                sizeBtns.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        document.getElementById('openContactModal').onclick = function(e) {
+      e.preventDefault();
+      document.getElementById('contactModal').style.display = 'flex';
+    };
+    document.getElementById('closeContactModal').onclick = function() {
+      document.getElementById('contactModal').style.display = 'none';
+    };
+    document.getElementById('contactModal').onclick = function(e) {
+      if (e.target === this) this.style.display = 'none';
+    };
     </script>
 </body>
 </html>

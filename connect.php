@@ -150,13 +150,14 @@
     function updateCartQuantity($userId, $productId, $change) {
         global $conn;
         
-        // Kiểm tra tồn kho
-        $sql = "SELECT tonkho FROM sanpham WHERE sanphamid = ?";
+        // Lấy tổng tồn kho từ bảng sanpham_size
+        $sql = "SELECT SUM(soluong) as tonkho FROM sanpham_size WHERE sanphamid = ?";
         $stmt = mysqli_prepare($conn, $sql);
         mysqli_stmt_bind_param($stmt, "i", $productId);
         mysqli_stmt_execute($stmt);
         $result = mysqli_stmt_get_result($stmt);
         $product = mysqli_fetch_assoc($result);
+        $tonkho = $product['tonkho'] ?? 0;
         
         // Lấy số lượng hiện tại trong giỏ hàng
         $sql = "SELECT soluong FROM giohang WHERE manguoidung = ? AND sanphamid = ?";
@@ -173,7 +174,7 @@
             return removeCartItem($userId, $productId);
         }
         
-        if ($newQuantity > $product['tonkho']) {
+        if ($newQuantity > $tonkho) {
             return ['success' => false, 'message' => 'Số lượng vượt quá tồn kho'];
         }
         
@@ -222,29 +223,30 @@
     }
 
     // Hàm thêm sản phẩm vào giỏ hàng
-    function addToCart($userId, $productId, $quantity = 1) {
+    function addToCart($userId, $productId, $quantity = 1, $sizeId = 0) {
         global $conn;
         
         try {
-            // Kiểm tra tồn kho
-            $sql = "SELECT tonkho FROM sanpham WHERE sanphamid = ?";
+            // Lấy tổng tồn kho từ bảng sanpham_size cho size cụ thể
+            $sql = "SELECT soluong FROM sanpham_size WHERE sanphamid = ? AND sizeid = ?";
             $stmt = mysqli_prepare($conn, $sql);
-            mysqli_stmt_bind_param($stmt, "i", $productId);
+            mysqli_stmt_bind_param($stmt, "ii", $productId, $sizeId);
             mysqli_stmt_execute($stmt);
             $result = mysqli_stmt_get_result($stmt);
             $product = mysqli_fetch_assoc($result);
+            $tonkho = $product['soluong'] ?? 0;
             
-            if (!$product) {
-                return ['success' => false, 'message' => 'Không tìm thấy sản phẩm'];
+            if ($tonkho === null) {
+                return ['success' => false, 'message' => 'Không tìm thấy sản phẩm hoặc tồn kho size này'];
             }
             
-            // Kiểm tra giỏ hàng hiện tại của user
+            // Kiểm tra giỏ hàng hiện tại của user với sản phẩm và size
             $sql = "SELECT g.giohangid, cg.chitietgiohangid, cg.soluong 
                     FROM giohang g 
-                    LEFT JOIN chitietgiohang cg ON g.giohangid = cg.magiohang AND cg.masanpham = ?
+                    LEFT JOIN chitietgiohang cg ON g.giohangid = cg.magiohang AND cg.masanpham = ? AND cg.sizeid = ?
                     WHERE g.manguoidung = ?";
             $stmt = mysqli_prepare($conn, $sql);
-            mysqli_stmt_bind_param($stmt, "ii", $productId, $userId);
+            mysqli_stmt_bind_param($stmt, "iii", $productId, $sizeId, $userId);
             mysqli_stmt_execute($stmt);
             $result = mysqli_stmt_get_result($stmt);
             $cartInfo = mysqli_fetch_assoc($result);
@@ -267,8 +269,8 @@
             }
             
             // Kiểm tra tồn kho với số lượng mới
-            if ($newQuantity > $product['tonkho']) {
-                return ['success' => false, 'message' => 'Số lượng vượt quá tồn kho'];
+            if ($newQuantity > $tonkho) {
+                return ['success' => false, 'message' => 'Số lượng vượt quá tồn kho size này'];
             }
             
             // Cập nhật hoặc thêm mới chi tiết giỏ hàng
@@ -277,9 +279,9 @@
                 $stmt = mysqli_prepare($conn, $sql);
                 mysqli_stmt_bind_param($stmt, "ii", $newQuantity, $cartInfo['chitietgiohangid']);
             } else {
-                $sql = "INSERT INTO chitietgiohang (magiohang, masanpham, soluong) VALUES (?, ?, ?)";
+                $sql = "INSERT INTO chitietgiohang (magiohang, masanpham, sizeid, soluong) VALUES (?, ?, ?, ?)";
                 $stmt = mysqli_prepare($conn, $sql);
-                mysqli_stmt_bind_param($stmt, "iii", $cartId, $productId, $newQuantity);
+                mysqli_stmt_bind_param($stmt, "iiii", $cartId, $productId, $sizeId, $newQuantity);
             }
             
             if (mysqli_stmt_execute($stmt)) {
