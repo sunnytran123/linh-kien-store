@@ -282,20 +282,44 @@ foreach ($colors as $cl) {
         }
 
         .quantity-selector button {
-            width: 30px;
-            height: 30px;
-            border: 1px solid #ddd;
+            width: 35px;
+            height: 35px;
             background: #fff;
-            border-radius: 4px;
+            color: #333;
+            border: 1px solid #ddd;
+            border-radius: 8px;
             cursor: pointer;
+            font-size: 18px;
+            transition: all 0.3s;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* .quantity-selector button:hover {
+            background: #f5f5f5;
+            border-color: #8BC34A;
+        } */
+
+        .quantity-selector button:focus {
+            outline: none;
         }
 
         .quantity-selector input {
-            width: 50px;
-            height: 30px;
+            min-width: 30px;
             text-align: center;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            font-size: 16px;
+            margin: 0;
+            padding: 0;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            width: 50px;
+            height: 35px;
         }
 
         .button-group {
@@ -837,10 +861,92 @@ foreach ($colors as $cl) {
                 height: 180px;
             }
         }
+        
+        /* Toast notification styles */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+        .toast {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            padding: 16px 20px;
+            margin-bottom: 10px;
+            min-width: 300px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        }
+        .toast.show {
+            transform: translateX(0);
+        }
+        .toast.success {
+            border-left: 4px solid #4CAF50;
+        }
+        .toast.error {
+            border-left: 4px solid #f44336;
+        }
+        .toast.warning {
+            border-left: 4px solid #ff9800;
+        }
+        .toast.info {
+            border-left: 4px solid #2196F3;
+        }
+        .toast-icon {
+            font-size: 20px;
+        }
+        .toast.success .toast-icon {
+            color: #4CAF50;
+        }
+        .toast.error .toast-icon {
+            color: #f44336;
+        }
+        .toast.warning .toast-icon {
+            color: #ff9800;
+        }
+        .toast.info .toast-icon {
+            color: #2196F3;
+        }
+        .toast-content {
+            flex: 1;
+        }
+        .toast-title {
+            font-weight: bold;
+            margin-bottom: 4px;
+            font-size: 14px;
+        }
+        .toast-message {
+            font-size: 13px;
+            color: #666;
+        }
+        .toast-close {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #999;
+            font-size: 16px;
+            padding: 0;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .toast-close:hover {
+            color: #333;
+        }
     </style>
 </head>
 <body>
 <?php include 'header.php'; ?>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
 
     <div class="breadcrumb">
         <a href="home.php">Trang chủ</a>
@@ -883,12 +989,12 @@ foreach ($colors as $cl) {
                     $discounted_price = calculateDiscountedPrice($product['gia'], $promotion);
                 ?>
                     <div class="price-wrapper">
-                        <span class="original-price"><?php echo number_format($product['gia'], 0, ',', '.'); ?>đ</span>
-                        <span class="discounted-price"><?php echo number_format($discounted_price, 0, ',', '.'); ?>đ</span>
+                        <span class="original-price"><?php echo number_format($product['gia'], 0, ',', '.'); ?>&nbsp;đ</span>
+                        <span class="discounted-price"><?php echo number_format($discounted_price, 0, ',', '.'); ?>&nbsp;đ</span>
                     </div>
-                    <span class="discount-badge">-<?php echo $promotion['giatrigiamgia']; ?>%</span>
+                    <span class="discount-badge">-<?php echo number_format ($promotion['giatrigiamgia'],0,',',','); ?>&nbsp;đ</span>
                 <?php else: ?>
-                    <span class="normal-price"><?php echo number_format($product['gia'], 0, ',', '.'); ?>đ</span>
+                    <span class="normal-price"><?php echo number_format($product['gia'], 0, ',', '.'); ?>&nbsp;đ</span>
                 <?php endif; ?>
             </div>
             
@@ -927,12 +1033,15 @@ foreach ($colors as $cl) {
                             </div>
                         </div>
                     <?php endif; ?>
-                </div>
-                <div class="quantity-selector">
-                    <button onclick="decreaseQuantity()" <?php echo $product['tonkho'] <= 0 ? 'disabled' : ''; ?>>-</button>
-                    <input type="number" id="quantity" value="1" min="1" max="<?php echo $product['tonkho']; ?>" 
-                           <?php echo $product['tonkho'] <= 0 ? 'disabled' : ''; ?>>
-                    <button onclick="increaseQuantity()" <?php echo $product['tonkho'] <= 0 ? 'disabled' : ''; ?>>+</button>
+                    <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                        <span class="product-options-label">Số lượng</span>
+                        <div class="quantity-selector">
+                            <button onclick="decreaseQuantity()" <?php echo $product['tonkho'] <= 0 ? 'disabled' : ''; ?>>-</button>
+                            <input type="number" id="quantity" value="1" min="1" max="<?php echo $product['tonkho']; ?>" 
+                                   <?php echo $product['tonkho'] <= 0 ? 'disabled' : ''; ?>>
+                            <button onclick="increaseQuantity()" <?php echo $product['tonkho'] <= 0 ? 'disabled' : ''; ?>>+</button>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="button-group">
@@ -1013,24 +1122,60 @@ foreach ($colors as $cl) {
             }
         }
 
+        // Toast notification function
+        function showToast(type, title, message, duration = 3000) {
+            const toastContainer = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            const iconMap = {
+                'success': 'fas fa-check-circle',
+                'error': 'fas fa-exclamation-circle',
+                'warning': 'fas fa-exclamation-triangle',
+                'info': 'fas fa-info-circle'
+            };
+            
+            toast.innerHTML = `
+                <i class="toast-icon ${iconMap[type]}"></i>
+                <div class="toast-content">
+                    <div class="toast-title">${title}</div>
+                    <div class="toast-message">${message}</div>
+                </div>
+                <button class="toast-close" onclick="this.parentElement.remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            
+            toastContainer.appendChild(toast);
+            
+            // Show animation
+            setTimeout(() => toast.classList.add('show'), 100);
+            
+            // Auto remove
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
+        }
+
         function addToCart(productId) {
             const quantity = parseInt(document.getElementById('quantity').value);
             // Lấy sizeid từ nút size đang active
             const activeSizeBtn = document.querySelector('.size-btn.active');
             if (!activeSizeBtn) {
-                alert('Vui lòng chọn size');
+                showToast('warning', 'Cảnh báo', 'Vui lòng chọn size');
                 return;
             }
             const sizeId = activeSizeBtn.getAttribute('data-size-id');
             // Lấy colorid từ nút màu đang active
             const activeColorBtn = document.querySelector('.color-btn.active');
             if (!activeColorBtn) {
-                alert('Vui lòng chọn màu sắc');
+                showToast('warning', 'Cảnh báo', 'Vui lòng chọn màu sắc');
                 return;
             }
             const colorId = activeColorBtn.getAttribute('data-color-id');
             if (isNaN(quantity) || quantity <= 0) {
-                alert('Vui lòng nhập số lượng hợp lệ');
+                showToast('warning', 'Cảnh báo', 'Vui lòng nhập số lượng hợp lệ');
                 return;
             }
             fetch('add_to_cart.php', {
@@ -1043,15 +1188,17 @@ foreach ($colors as $cl) {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    alert('Đã thêm sản phẩm vào giỏ hàng');
-                    window.location.href = 'cart.php';
+                    showToast('success', 'Thành công', 'Đã thêm sản phẩm vào giỏ hàng');
+                    setTimeout(() => {
+                        window.location.href = 'cart.php';
+                    }, 1500);
                 } else {
-                    alert(data.message || 'Có lỗi xảy ra khi thêm vào giỏ hàng');
+                    showToast('error', 'Lỗi', data.message || 'Có lỗi xảy ra khi thêm vào giỏ hàng');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Có lỗi xảy ra khi kết nối với server');
+                showToast('error', 'Lỗi', 'Có lỗi xảy ra khi kết nối với server');
             });
         }
 
@@ -1059,7 +1206,7 @@ foreach ($colors as $cl) {
             const quantity = parseInt(document.getElementById('quantity').value);
             
             if (isNaN(quantity) || quantity <= 0) {
-                alert('Vui lòng nhập số lượng hợp lệ');
+                showToast('warning', 'Cảnh báo', 'Vui lòng nhập số lượng hợp lệ');
                 return;
             }
             
@@ -1074,15 +1221,17 @@ foreach ($colors as $cl) {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Chuyển hướng đến trang thanh toán
-                    window.location.href = 'checkout.php?buy_now=1';
+                    showToast('success', 'Thành công', 'Chuyển hướng đến trang thanh toán...');
+                    setTimeout(() => {
+                        window.location.href = 'checkout.php?buy_now=1';
+                    }, 1500);
                 } else {
-                    alert(data.message || 'Có lỗi xảy ra');
+                    showToast('error', 'Lỗi', data.message || 'Có lỗi xảy ra');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Có lỗi xảy ra khi kết nối với server');
+                showToast('error', 'Lỗi', 'Có lỗi xảy ra khi kết nối với server');
             });
         }
 

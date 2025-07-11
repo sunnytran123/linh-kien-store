@@ -437,10 +437,48 @@ if (!isset($_SESSION['id']) || !isset($_SESSION['loai'])) {
         opacity: 0.5;
         cursor: not-allowed;
     }
-    .checkout-btn:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
+            .checkout-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        /* Modal styles for edit variant */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+        }
+        
+        .close-modal {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+        
+        .close-modal:hover {
+            color: #333;
+        }
 </style>
 
 <!DOCTYPE html>
@@ -522,7 +560,7 @@ if (!isset($_SESSION['id']) || !isset($_SESSION['loai'])) {
                         <span class="variant-badge" style="background:#eee;color:#333;padding:2px 8px;border-radius:6px;display:inline-block;min-width:30px;margin-left:6px;">
                             <?php echo $row['kichco'] ? htmlspecialchars($row['kichco']) : 'Chưa chọn'; ?>
                         </span>
-                        <button class="edit-variant-btn" style="margin-left:8px;cursor:pointer;background:none;border:none;color:#8BC34A;font-size:16px;" onclick="openEditVariantModal(<?php echo $row['chitietgiohangid']; ?>)"><i class="fas fa-edit"></i></button>
+                        <button class="edit-variant-btn" style="margin-left:8px;cursor:pointer;background:none;border:none;color:#8BC34A;font-size:16px;" onclick="openEditVariantModal(<?php echo $row['chitietgiohangid']; ?>)" title="Thay đổi phân loại"><i class="fas fa-edit"></i></button>
                     </td>
                     <td class="price-info">
                         <?php if ($promotion): ?>
@@ -572,6 +610,17 @@ if (!isset($_SESSION['id']) || !isset($_SESSION['loai'])) {
 </div>
 
 <?php include 'footer.php'; ?>
+
+<!-- Edit Variant Modal -->
+<div id="editVariantModal" class="modal-overlay" style="display:none;">
+    <div class="modal-content">
+        <span class="close-modal" onclick="closeEditVariantModal()">&times;</span>
+        <h2>Thay đổi phân loại sản phẩm</h2>
+        <div id="variantModalContent">
+            <!-- Content will be loaded dynamically -->
+        </div>
+    </div>
+</div>
 
 <script>
 // Toast notification function
@@ -817,6 +866,100 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
+
+// Edit variant functions
+function openEditVariantModal(cartItemId) {
+    console.log('Opening modal for cart item:', cartItemId);
+    
+    // Show loading in modal
+    document.getElementById('variantModalContent').innerHTML = '<div style="text-align: center; padding: 20px;"><div class="loading"></div><p>Đang tải...</p></div>';
+    document.getElementById('editVariantModal').style.display = 'flex';
+    
+    // Fetch variant options
+    fetch('get_variant_options.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `cart_item_id=${cartItemId}`
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        return response.json();
+    })
+    .then(data => {
+        console.log('Response data:', data);
+        if (data.success) {
+            document.getElementById('variantModalContent').innerHTML = data.html;
+            // Store cart item ID for update
+            document.getElementById('editVariantModal').setAttribute('data-cart-item-id', cartItemId);
+        } else {
+            showToast('error', 'Lỗi', data.message || 'Không thể tải thông tin sản phẩm');
+            closeEditVariantModal();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('error', 'Lỗi', 'Có lỗi xảy ra khi tải thông tin sản phẩm');
+        closeEditVariantModal();
+    });
+}
+
+function closeEditVariantModal() {
+    document.getElementById('editVariantModal').style.display = 'none';
+    document.getElementById('variantModalContent').innerHTML = '';
+}
+
+// Add event listener to close modal when clicking outside
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('editVariantModal');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeEditVariantModal();
+            }
+        });
+    }
+});
+
+function updateVariant() {
+    const cartItemId = document.getElementById('editVariantModal').getAttribute('data-cart-item-id');
+    const selectedColor = document.querySelector('input[name="color"]:checked');
+    const selectedSize = document.querySelector('input[name="size"]:checked');
+    
+    if (!selectedColor || !selectedSize) {
+        showToast('warning', 'Cảnh báo', 'Vui lòng chọn đầy đủ màu sắc và size');
+        return;
+    }
+    
+    const colorId = selectedColor.value;
+    const sizeId = selectedSize.value;
+    
+    fetch('update_variant.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `cart_item_id=${cartItemId}&color_id=${colorId}&size_id=${sizeId}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('success', 'Thành công', 'Đã cập nhật phân loại sản phẩm');
+            closeEditVariantModal();
+            // Reload page to show updated variant
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        } else {
+            showToast('error', 'Lỗi', data.message || 'Không thể cập nhật phân loại');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('error', 'Lỗi', 'Có lỗi xảy ra khi cập nhật phân loại');
+    });
+}
 </script>
 </body>
 </html> 

@@ -80,7 +80,7 @@
         global $conn;
         
         // Sử dụng prepared statement để tránh SQL injection
-        $sql = "SELECT * FROM bạn hayxcnguoi_dung WHERE email = ? AND mat_khau = ? LIMIT 1";
+        $sql = "SELECT * FROM nguoi_dung WHERE email = ? AND mat_khau = ? LIMIT 1";
         $stmt = mysqli_prepare($conn, $sql);
         mysqli_stmt_bind_param($stmt, "ss", $email, $pass);
         mysqli_stmt_execute($stmt);

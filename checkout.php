@@ -135,56 +135,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
     }
 
     if (!empty($error)) {
-        echo json_encode(['success' => false, 'message' => $error]);
-        exit;
-    }
-
-    // Bắt đầu transaction
-    $conn->begin_transaction();
-    
-    try {
-        // Tạo một đơn hàng mới
-        $stmt = $conn->prepare("INSERT INTO donhang (manguoidung, ten_nguoi_dat, ngaydat, trangthai, tongtien, diachigiao, sdt, phuongthuctt) 
-                               VALUES (?, ?, NOW(), 'Chờ xác nhận', ?, ?, ?, ?)");
-        $stmt->bind_param("issdss", $userId, $fullname, $total, $address, $phone, $paymentMethod);
-        $stmt->execute();
-        $orderId = $conn->insert_id;
-        
-        // Chuẩn bị statement cho chi tiết đơn hàng
-        $stmt = $conn->prepare("INSERT INTO chitietdonhang (madonhang, masanpham, soluong, gia) VALUES (?, ?, ?, ?)");
-        
-        if (isset($_SESSION['buy_now'])) {
-            // Thêm sản phẩm mua ngay vào đơn hàng
-            $stmt->bind_param("iiid", $orderId, $buyNowInfo['product_id'], $quantity, $price);
+        echo '<div style="color:red;text-align:center;font-size:18px;margin-bottom:10px;">'.$error.'</div>';
+    } else {
+        $conn->begin_transaction();
+        try {
+            // Tạo một đơn hàng mới
+            $stmt = $conn->prepare("INSERT INTO donhang (manguoidung, ten_nguoi_dat, ngaydat, trangthai, tongtien, diachigiao, sdt, phuongthuctt) 
+                                   VALUES (?, ?, NOW(), 'Chờ xác nhận', ?, ?, ?, ?)");
+            $stmt->bind_param("isdsss", $userId, $fullname, $total, $address, $phone, $paymentMethod);
             $stmt->execute();
-            
-            unset($_SESSION['buy_now']);
-        } elseif (isset($_SESSION['checkout_items'])) {
-            // Thêm tất cả sản phẩm từ giỏ hàng vào cùng một đơn hàng
-            foreach ($_SESSION['checkout_items'] as $item) {
-                $stmt->bind_param("iiid", $orderId, $item['masanpham'], $item['soluong'], $item['final_price']);
+            $orderId = $conn->insert_id;
+
+            // Chuẩn bị statement cho chi tiết đơn hàng (thêm sizeid)
+            $stmt = $conn->prepare("INSERT INTO chitietdonhang (madonhang, masanpham, sizeid, soluong, gia) VALUES (?, ?, ?, ?, ?)");
+
+            if (isset($_SESSION['buy_now'])) {
+                // Thêm sản phẩm mua ngay vào đơn hàng
+                $sizeid = isset($buyNowInfo['sizeid']) ? $buyNowInfo['sizeid'] : 0;
+                $stmt->bind_param("iiiid", $orderId, $buyNowInfo['product_id'], $sizeid, $quantity, $price);
                 $stmt->execute();
-                
-                // Xóa sản phẩm khỏi giỏ hàng
-                $deleteStmt = $conn->prepare("DELETE FROM chitietgiohang WHERE chitietgiohangid = ?");
-                $deleteStmt->bind_param("i", $item['chitietgiohangid']);
-                $deleteStmt->execute();
+                unset($_SESSION['buy_now']);
+            } elseif (isset($_SESSION['checkout_items'])) {
+                // Thêm tất cả sản phẩm từ giỏ hàng vào cùng một đơn hàng
+                foreach ($_SESSION['checkout_items'] as $item) {
+                    $sizeid = isset($item['sizeid']) ? $item['sizeid'] : 0;
+                    $stmt->bind_param("iiiid", $orderId, $item['masanpham'], $sizeid, $item['soluong'], $item['final_price']);
+                    $stmt->execute();
+                    // Xóa sản phẩm khỏi giỏ hàng
+                    $deleteStmt = $conn->prepare("DELETE FROM chitietgiohang WHERE chitietgiohangid = ?");
+                    $deleteStmt->bind_param("i", $item['chitietgiohangid']);
+                    $deleteStmt->execute();
+                }
+                unset($_SESSION['checkout_items']);
             }
-            
-            unset($_SESSION['checkout_items']);
+
+            // Commit transaction
+            $conn->commit();
+            header("Location: order_history.php");
+            exit();
+        } catch (Exception $e) {
+            $conn->rollback();
+            echo '<div style="color:red;text-align:center;font-size:18px;margin-bottom:10px;">Có lỗi xảy ra: '.htmlspecialchars($e->getMessage()).'</div>';
         }
-        
-        // Commit transaction
-        $conn->commit();
-        
-        // Chuyển hướng đến trang lịch sử đơn hàng
-        header("Location: order_history.php");
-        exit();
-        
-    } catch (Exception $e) {
-        // Rollback nếu có lỗi
-        $conn->rollback();
-        $error = "Có lỗi xảy ra: " . $e->getMessage();
     }
 }
 ?>
@@ -408,26 +400,77 @@ include 'header.php';
             <h2 class="summary-title">Đơn hàng của bạn</h2>
             <?php if (isset($_SESSION['buy_now']) && isset($product)): ?>
                 <!-- Hiển thị sản phẩm mua ngay -->
+                <?php
+                    // Lấy thông tin màu và size nếu có
+                    $colorName = '';
+                    $sizeName = '';
+                    if (isset($buyNowInfo['colorid']) && $buyNowInfo['colorid']) {
+                        $stmt = $conn->prepare("SELECT tenmau FROM mausac WHERE mausacid = ?");
+                        $stmt->bind_param("i", $buyNowInfo['colorid']);
+                        $stmt->execute();
+                        $result = $stmt->get_result();
+                        if ($row = $result->fetch_assoc()) {
+                            $colorName = $row['tenmau'];
+                        }
+                    }
+                    if (isset($buyNowInfo['sizeid']) && $buyNowInfo['sizeid']) {
+                        $stmt = $conn->prepare("SELECT kichco FROM size WHERE sizeid = ?");
+                        $stmt->bind_param("i", $buyNowInfo['sizeid']);
+                        $stmt->execute();
+                        $result = $stmt->get_result();
+                        if ($row = $result->fetch_assoc()) {
+                            $sizeName = $row['kichco'];
+                        }
+                    }
+                ?>
                 <div class="product-item">
                     <img src="picture/<?php echo $product['duongdan']; ?>" alt="<?php echo $product['tensanpham']; ?>" style="width: 100px; height: 100px; object-fit: cover;">
                     <div class="product-info">
                         <h3><?php echo $product['tensanpham']; ?></h3>
-                        <p>Số lượng: <?php echo $quantity; ?></p>
-                        <p>Đơn giá: <?php echo number_format($price, 0, ',', '.'); ?> VNĐ</p>
+                        <p style="font-size: 16px;">Số lượng: <?php echo $quantity; ?></p>
+                        <?php if ($colorName): ?><p style="padding-bottom: 10px; margin-bottom: 10px; font-size: 16px;">Màu sắc: <?php echo htmlspecialchars($colorName); ?></p><?php endif; ?>
+                        <?php if ($sizeName): ?><p style="padding-bottom: 10px; margin-bottom: 10px; font-size: 16px;">Size: <?php echo htmlspecialchars($sizeName); ?></p><?php endif; ?>
+                        <p style="font-size: 16px;">Đơn giá: <?php echo number_format($price, 0, ',', '.'); ?> VNĐ</p>
                     </div>
                 </div>
             <?php elseif (isset($_SESSION['checkout_items'])): ?>
                 <!-- Hiển thị sản phẩm từ giỏ hàng -->
                 <?php foreach ($_SESSION['checkout_items'] as $item): ?>
-<div class="product-item" style="padding-bottom: 10px; border-bottom: 1px solid #ccc; margin-bottom: 10px;">
-    <img src="picture/<?php echo $item['duongdan']; ?>" alt="<?php echo $item['tensanpham']; ?>" style="width: 100px; height: 100px; object-fit: cover;">
-    <div class="product-info" style="padding-bottom: 10px; margin-bottom: 10px;">
-        <h3 style="padding-bottom: 10px; margin-bottom: 10px;"><?php echo $item['tensanpham']; ?></h3>
-        <p style="padding-bottom: 10px; margin-bottom: 10px;">Số lượng: <?php echo $item['soluong']; ?></p>
-        <p>Đơn giá: <?php echo number_format($item['final_price'], 0, ',', '.'); ?> VNĐ</p>
-    </div>
-</div>
-<?php endforeach; ?>
+                    <?php
+                        // Lấy tên màu sắc
+                        $colorName = '';
+                        if (isset($item['mausacid']) && $item['mausacid']) {
+                            $stmt = $conn->prepare("SELECT tenmau FROM mausac WHERE mausacid = ?");
+                            $stmt->bind_param("i", $item['mausacid']);
+                            $stmt->execute();
+                            $result = $stmt->get_result();
+                            if ($row = $result->fetch_assoc()) {
+                                $colorName = $row['tenmau'];
+                            }
+                        }
+                        // Lấy tên size
+                        $sizeName = '';
+                        if (isset($item['sizeid']) && $item['sizeid']) {
+                            $stmt = $conn->prepare("SELECT kichco FROM size WHERE sizeid = ?");
+                            $stmt->bind_param("i", $item['sizeid']);
+                            $stmt->execute();
+                            $result = $stmt->get_result();
+                            if ($row = $result->fetch_assoc()) {
+                                $sizeName = $row['kichco'];
+                            }
+                        }
+                    ?>
+                    <div class="product-item" style="padding-bottom: 10px; border-bottom: 1px solid #ccc; margin-bottom: 10px;">
+                        <img src="picture/<?php echo $item['duongdan']; ?>" alt="<?php echo $item['tensanpham']; ?>" style="width: 100px; height: 100px; object-fit: cover;">
+                        <div class="product-info" style="padding-bottom: 10px; margin-bottom: 10px;">
+                            <h3 style="padding-bottom: 10px; margin-bottom: 10px;"><?php echo $item['tensanpham']; ?></h3>
+                            <p style="padding-bottom: 10px; margin-bottom: 10px; font-size: 16px;">Số lượng: <?php echo $item['soluong']; ?></p>
+                            <?php if ($colorName): ?><p style="padding-bottom: 10px; margin-bottom: 10px; font-size: 16px;">Màu sắc: <?php echo htmlspecialchars($colorName); ?></p><?php endif; ?>
+                            <?php if ($sizeName): ?><p style="padding-bottom: 10px; margin-bottom: 10px; font-size: 16px;">Size: <?php echo htmlspecialchars($sizeName); ?></p><?php endif; ?>
+                            <p style="font-size: 16px;">Đơn giá: <?php echo number_format($item['final_price'], 0, ',', '.'); ?> VNĐ</p>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
             <?php endif; ?>
 
             <div class="summary-items">
