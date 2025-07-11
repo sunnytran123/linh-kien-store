@@ -82,12 +82,11 @@ while ($row = $result->fetch_assoc()) {
 }
 
 // Tạo HTML cho modal
-$html = '<div style="margin-bottom: 20px;">';
-$html .= '<h3 style="color: #333; margin-bottom: 15px;">' . htmlspecialchars($cartItem['tensanpham']) . '</h3>';
-
+$html = '';
+// Không hiển thị tên sản phẩm hoặc tiêu đề
 // Màu sắc
 $html .= '<div style="margin-bottom: 20px;">';
-$html .= '<label style="display: block; font-weight: bold; margin-bottom: 10px; color: #333;">Màu sắc:</label>';
+$html .= '<label style="display: block; margin-bottom: 10px; color: #333;">Màu sắc:</label>';
 $html .= '<div style="display: flex; flex-wrap: wrap; gap: 10px;">';
 
 foreach ($colors as $color) {
@@ -103,7 +102,7 @@ $html .= '</div></div>';
 
 // Kích thước
 $html .= '<div style="margin-bottom: 20px;">';
-$html .= '<label style="display: block; font-weight: bold; margin-bottom: 10px; color: #333;">Kích thước:</label>';
+$html .= '<label style="display: block;  margin-bottom: 10px; color: #333;">Kích thước:</label>';
 $html .= '<div style="display: flex; flex-wrap: wrap; gap: 10px;">';
 
 foreach ($sizes as $size) {

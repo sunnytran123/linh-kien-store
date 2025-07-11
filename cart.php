@@ -123,14 +123,18 @@ if (!isset($_SESSION['id']) || !isset($_SESSION['loai'])) {
         accent-color: #8BC34A;
     }
     .total-label {
-        text-align: right;
         font-weight: bold;
         font-size: 16px;
+        text-align: right;
+        color: #333;
+        padding-right: 10px;
     }
     .total-amount {
         font-weight: bold;
         color: #ff4d4d;
         font-size: 18px;
+        text-align: right;
+        padding-right: 10px;
     }
     .cart-actions {
         margin-top: 20px;
@@ -588,8 +592,10 @@ if (!isset($_SESSION['id']) || !isset($_SESSION['loai'])) {
             </tbody>
             <tfoot>
                 <tr>
-                    <td colspan="4" class="total-label">Tổng cộng:</td>
-                    <td colspan="2" class="total-amount">0đ</td>
+                    <td colspan="4"></td>
+                    <td class="total-label" style="text-align: left;">Tổng cộng:</td>
+                    <td class="total-amount" style="text-align: right;">0đ</td>
+                    <td></td>
                 </tr>
             </tfoot>
         </table>
@@ -615,7 +621,6 @@ if (!isset($_SESSION['id']) || !isset($_SESSION['loai'])) {
 <div id="editVariantModal" class="modal-overlay" style="display:none;">
     <div class="modal-content">
         <span class="close-modal" onclick="closeEditVariantModal()">&times;</span>
-        <h2>Thay đổi phân loại sản phẩm</h2>
         <div id="variantModalContent">
             <!-- Content will be loaded dynamically -->
         </div>

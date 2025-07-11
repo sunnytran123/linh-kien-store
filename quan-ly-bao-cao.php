@@ -11,8 +11,18 @@ $sql_nhanvien = "SELECT COUNT(*) as total FROM nguoi_dung WHERE loai = '2'";
 $result_nhanvien = $conn->query($sql_nhanvien);
 $total_nhanvien = $result_nhanvien->fetch_assoc()['total'];
 
-// Lấy tổng số sản phẩm
-$sql_sanpham = "SELECT COUNT(*) as total, SUM(CASE WHEN tonkho = 0 THEN 1 ELSE 0 END) as hethang FROM sanpham";
+// Lấy tổng số sản phẩm và số sản phẩm hết hàng
+$sql_sanpham = "
+    SELECT 
+        COUNT(*) as total, 
+        SUM(CASE WHEN IFNULL(t.tonkho,0) = 0 THEN 1 ELSE 0 END) as hethang
+    FROM sanpham sp
+    LEFT JOIN (
+        SELECT sanphamid, SUM(soluong) as tonkho
+        FROM sanpham_size
+        GROUP BY sanphamid
+    ) t ON sp.sanphamid = t.sanphamid
+";
 $result_sanpham = $conn->query($sql_sanpham);
 $sanpham_stats = $result_sanpham->fetch_assoc();
 
@@ -58,11 +68,18 @@ LIMIT 5";
 $result_tongdon = $conn->query($sql_tongdon);
 
 // Lấy sản phẩm hết hàng
-$sql_hethang = "SELECT sp.sanphamid, sp.tensanpham, ha.duongdan, sp.tonkho, sp.gia, dm.tendanhmuc
-                FROM sanpham sp
-                LEFT JOIN hinhanhsanpham ha ON sp.sanphamid = ha.masanpham
-                LEFT JOIN danhmuc dm ON sp.madanhmuc = dm.danhmucid
-                WHERE sp.tonkho = 0";
+$sql_hethang = "
+    SELECT sp.sanphamid, sp.tensanpham, ha.duongdan, IFNULL(t.tonkho,0) as tonkho, sp.gia, dm.tendanhmuc
+    FROM sanpham sp
+    LEFT JOIN hinhanhsanpham ha ON sp.sanphamid = ha.masanpham
+    LEFT JOIN danhmuc dm ON sp.madanhmuc = dm.danhmucid
+    LEFT JOIN (
+        SELECT sanphamid, SUM(soluong) as tonkho
+        FROM sanpham_size
+        GROUP BY sanphamid
+    ) t ON sp.sanphamid = t.sanphamid
+    WHERE IFNULL(t.tonkho,0) = 0
+";
 $result_hethang = $conn->query($sql_hethang);
 
 // Lấy nhân viên mới
