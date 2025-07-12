@@ -591,4 +591,31 @@ a:hover {
 #sampleTable th:nth-child(6) { width: 100px !important; }
 #sampleTable th:nth-child(7) { width: 90px !important; }
 #sampleTable th:nth-child(8) { width: 120px !important; }
-#sampleTable th { min-width: 60px; } 
+#sampleTable th { min-width: 60px; }
+
+/* Width cho bảng khuyến mãi */
+#sampleTable th:nth-child(1) { width: 40px !important; } /* Checkbox */
+#sampleTable th:nth-child(2) { width: 180px !important; } /* Tên khuyến mãi */
+#sampleTable th:nth-child(3) { width: 100px !important; } /* Giá trị */
+#sampleTable th:nth-child(4) { width: 120px !important; } /* Ngày bắt đầu */
+#sampleTable th:nth-child(5) { width: 120px !important; } /* Ngày kết thúc */
+#sampleTable th:nth-child(6) { width: 80px !important; } /* SL áp dụng */
+#sampleTable th:nth-child(7) { width: 200px !important; } /* Sản phẩm */
+#sampleTable th:nth-child(8) { width: 100px !important; } /* Trạng thái */
+#sampleTable th:nth-child(9) { width: 100px !important; } /* Tính năng */
+
+/* Width cho bảng báo cáo - Sản phẩm bán chạy */
+#sampleTable th:nth-child(1) { width: 100px !important; } /* Mã sản phẩm */
+#sampleTable th:nth-child(2) { width: 250px !important; } /* Tên sản phẩm */
+#sampleTable th:nth-child(3) { width: 120px !important; } /* Giá tiền */
+#sampleTable th:nth-child(4) { width: 150px !important; } /* Danh mục */
+#sampleTable th:nth-child(5) { width: 120px !important; } /* Số lượng đã bán */
+
+/* Width cho bảng báo cáo - Tổng đơn hàng */
+#sampleTable th:nth-child(1) { width: 100px !important; } /* ID đơn hàng */
+#sampleTable th:nth-child(2) { width: 150px !important; } /* Khách hàng */
+#sampleTable th:nth-child(3) { width: 120px !important; } /* Ngày đặt */
+#sampleTable th:nth-child(4) { width: 120px !important; } /* Trạng thái */
+#sampleTable th:nth-child(5) { width: 120px !important; } /* Số điện thoại */
+#sampleTable th:nth-child(6) { width: 120px !important; } /* Phương thức TT */
+#sampleTable th:nth-child(7) { width: 120px !important; } /* Tổng tiền */ 

@@ -31,30 +31,37 @@ if(isset($_POST['delete_product'])) {
     echo '[status';
 }
 
-// Truy vấn lấy danh sách sản phẩm và hình ảnh
-$sql = "SELECT sp.*, ha.duongdan, dm.tendanhmuc 
+// Truy vấn lấy danh sách sản phẩm và hình ảnh với tổng số lượng từ sanpham_size
+$sql = "SELECT sp.*, 
+        (SELECT ha.duongdan FROM hinhanhsanpham ha WHERE ha.masanpham = sp.sanphamid LIMIT 1) as duongdan,
+        dm.tendanhmuc, 
+        COALESCE(SUM(ss.soluong), 0) as tong_ton_kho,
+        GROUP_CONCAT(DISTINCT CONCAT(s.kichco, ':', ss.soluong) ORDER BY s.sizeid SEPARATOR ', ') as size_details,
+        GROUP_CONCAT(DISTINCT ms.tenmau ORDER BY ms.tenmau SEPARATOR ', ') as color_details
         FROM sanpham sp 
-        LEFT JOIN hinhanhsanpham ha ON sp.sanphamid = ha.masanpham
-        LEFT JOIN danhmuc dm ON sp.madanhmuc = dm.danhmucid";
+        LEFT JOIN danhmuc dm ON sp.madanhmuc = dm.danhmucid
+        LEFT JOIN sanpham_size ss ON sp.sanphamid = ss.sanphamid
+        LEFT JOIN size s ON ss.sizeid = s.sizeid
+        LEFT JOIN sanpham_mausac spm ON sp.sanphamid = spm.sanphamid
+        LEFT JOIN mausac ms ON spm.mausacid = ms.mausacid
+        GROUP BY sp.sanphamid, dm.tendanhmuc";
 $result = $conn->query($sql);
 
 // Thêm vào phần đầu file để xử lý cập nhật
 if(isset($_POST['update_product'])) {
     $sanphamid = $_POST['sanphamid'];
     $tensanpham = $_POST['tensanpham'];
-    $tonkho = $_POST['tonkho'];
     $gia = str_replace(['.', ','], '', $_POST['gia']); // Chuyển đổi định dạng tiền về số
     $madanhmuc = $_POST['madanhmuc'];
     
     $sql = "UPDATE sanpham SET 
             tensanpham = ?, 
-            tonkho = ?, 
             gia = ?, 
             madanhmuc = ? 
             WHERE sanphamid = ?";
             
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("sidii", $tensanpham, $tonkho, $gia, $madanhmuc, $sanphamid);
+    $stmt->bind_param("sdii", $tensanpham, $gia, $madanhmuc, $sanphamid);
     
     if($stmt->execute()) {
         echo "<script>
@@ -86,6 +93,57 @@ $result_danhmuc = $conn->query($sql_danhmuc);
         <link rel="stylesheet" type="text/css" href="css/main.css">
         <!-- Custom Admin CSS -->
         <link rel="stylesheet" type="text/css" href="css/admin-custom.css">
+        <style>
+            .badge-info {
+                background-color: #17a2b8;
+                color: white;
+                font-size: 11px;
+                padding: 3px 6px;
+                margin-right: 2px;
+                border-radius: 4px;
+            }
+            .mr-1 {
+                margin-right: 0.25rem;
+            }
+            .text-muted {
+                color: #6c757d !important;
+                font-style: italic;
+            }
+            .badge-secondary {
+                background-color: #6c757d;
+                color: white;
+                font-size: 11px;
+                padding: 3px 6px;
+                margin-right: 2px;
+                margin-bottom: 2px;
+                border-radius: 4px;
+                display: inline-block;
+            }
+            
+            /* Chỉnh width cho các cột bảng */
+            #sampleTable th:nth-child(1) { width: 50px; } /* Checkbox */
+            #sampleTable th:nth-child(2) { width: 100px; } /* Mã sản phẩm */
+            #sampleTable th:nth-child(3) { width: 200px; } /* Tên sản phẩm */
+            #sampleTable th:nth-child(4) { width: 120px; } /* Ảnh */
+            #sampleTable th:nth-child(5) { width: 150px; } /* Chi tiết size */
+            #sampleTable th:nth-child(6) { width: 120px; } /* Màu sắc */
+            #sampleTable th:nth-child(7) { width: 100px; } /* Tình trạng */
+            #sampleTable th:nth-child(8) { width: 120px; } /* Giá tiền */
+            #sampleTable th:nth-child(9) { width: 120px; } /* Danh mục */
+            #sampleTable th:nth-child(10) { width: 100px; } /* Tính năng */
+            
+            /* Chỉnh width cho các ô dữ liệu */
+            #sampleTable td:nth-child(1) { width: 50px; text-align: center; }
+            #sampleTable td:nth-child(2) { width: 100px; text-align: center; }
+            #sampleTable td:nth-child(3) { width: 200px; }
+            #sampleTable td:nth-child(4) { width: 120px; text-align: center; }
+            #sampleTable td:nth-child(5) { width: 150px; }
+            #sampleTable td:nth-child(6) { width: 120px; }
+            #sampleTable td:nth-child(7) { width: 100px; text-align: center; }
+            #sampleTable td:nth-child(8) { width: 120px; text-align: right; }
+            #sampleTable td:nth-child(9) { width: 120px; }
+            #sampleTable td:nth-child(10) { width: 100px; text-align: center; }
+        </style>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/boxicons@latest/css/boxicons.min.css">
         <!-- or -->
         <link rel="stylesheet" href="https://unpkg.com/boxicons@latest/css/boxicons.min.css">
@@ -204,9 +262,10 @@ $result_danhmuc = $conn->query($sql_danhmuc);
                                   <tr>
                                       <th width="10"><input type="checkbox" id="selectAll"></th>
                                       <th class="text-center">Mã sản phẩm</th>
-                                      <th>Tên sản phẩm</th>
+                                      <th>sản phẩm</th>
                                       <th>Ảnh</th>
-                                      <th class="text-center">Số lượng</th>
+                                      <th>Chi tiết size</th>
+                                      <th>Màu sắc</th>
                                       <th>Tình trạng</th>
                                       <th>Giá tiền</th>
                                       <th>Danh mục</th>
@@ -217,7 +276,7 @@ $result_danhmuc = $conn->query($sql_danhmuc);
                                   <?php
                                   if ($result->num_rows > 0) {
                                       while($row = $result->fetch_assoc()) {
-                                          $tinhtrang = ($row['tonkho'] > 0) ? 
+                                          $tinhtrang = ($row['tong_ton_kho'] > 0) ? 
                                               '<span class="badge bg-success">Còn hàng</span>' : 
                                               '<span class="badge bg-danger">Hết hàng</span>';
                                           ?>
@@ -232,7 +291,33 @@ $result_danhmuc = $conn->query($sql_danhmuc);
                                                       <img src="/img-sanpham/no-image.jpg" alt="" width="100px;">
                                                   <?php } ?>
                                               </td>
-                                              <td class="text-center"><?php echo $row['tonkho']; ?></td>
+                                              <td>
+                                                  <?php 
+                                                  if($row['size_details']) {
+                                                      $sizes = explode(', ', $row['size_details']);
+                                                      foreach($sizes as $size) {
+                                                          $size_parts = explode(':', $size);
+                                                          if(count($size_parts) == 2 && $size_parts[1] > 0) {
+                                                              echo '<span class="badge badge-info mr-1">' . $size_parts[0] . ': ' . $size_parts[1] . '</span>';
+                                                          }
+                                                      }
+                                                  } else {
+                                                      echo '<span class="text-muted">-</span>';
+                                                  }
+                                                  ?>
+                                              </td>
+                                              <td>
+                                                  <?php 
+                                                  if($row['color_details']) {
+                                                      $colors = explode(', ', $row['color_details']);
+                                                      foreach($colors as $color) {
+                                                          echo '<span class="badge badge-secondary mr-1">' . trim($color) . '</span>';
+                                                      }
+                                                  } else {
+                                                      echo '<span class="text-muted">Chưa có màu</span>';
+                                                  }
+                                                  ?>
+                                              </td>
                                               <td><?php echo $tinhtrang; ?></td>
                                               <td><?php echo number_format($row['gia'], 0, ',', '.') . ' đ'; ?></td>
                                               <td data-madanhmuc="<?php echo $row['madanhmuc']; ?>">
@@ -251,7 +336,7 @@ $result_danhmuc = $conn->query($sql_danhmuc);
                                           <?php
                                       }
                                   } else {
-                                      echo "<tr><td colspan='9'>Không có sản phẩm nào</td></tr>";
+                                      echo "<tr><td colspan='11'>Không có sản phẩm nào</td></tr>";
                                   }
                                   ?>
                               </tbody>
@@ -289,7 +374,8 @@ data-keyboard="false">
           </div>
           <div class="form-group col-md-6">
               <label class="control-label">Số lượng</label>
-              <input class="form-control" type="number" name="tonkho" id="tonkho" required>
+              <input class="form-control" type="number" name="tong_ton_kho" id="tong_ton_kho" readonly>
+              <small class="form-text text-muted">Số lượng được quản lý qua bảng sanpham_size</small>
           </div>
           <div class="form-group col-md-6">
               <label class="control-label">Giá bán</label>
@@ -440,13 +526,13 @@ MODAL
             var row = $(this).closest('tr');
             var sanphamid = row.find('td:eq(1)').text();
             var tensanpham = row.find('td:eq(2)').text();
-            var tonkho = row.find('td:eq(4)').text();
+            var tong_ton_kho = row.find('td:eq(4)').text();
             var gia = row.find('td:eq(6)').text().replace(/[^\d]/g, '');
             var madanhmuc = row.find('td:eq(7)').attr('data-madanhmuc');
 
             $('#sanphamid').val(sanphamid);
             $('#tensanpham').val(tensanpham);
-            $('#tonkho').val(tonkho);
+            $('#tong_ton_kho').val(tong_ton_kho);
             $('#gia').val(gia);
             $('#madanhmuc').val(madanhmuc);
         });

@@ -197,10 +197,12 @@ $result = $conn->query($sql);
                                             data-id="<?php echo $row['donhangid']; ?>">
                                         <i class="fas fa-trash-alt"></i>
                                     </button>                                    
+                                    <?php if($row['trangthai'] != 'Đã hủy'): ?>
                                     <button class="btn btn-primary btn-sm edit" type="button" title="Sửa" 
                                             onclick="window.location.href='form-edit-don-hang.php?id=<?php echo $row['donhangid']; ?>'">
                                         <i class="fa fa-edit"></i>
                                     </button>
+                                    <?php endif; ?>
                                 </td>
                             </tr>
                     <?php

@@ -52,6 +52,21 @@ if ($sanphamid) {
 $sql_danhmuc = "SELECT * FROM danhmuc";
 $result_danhmuc = $conn->query($sql_danhmuc);
 
+// Lấy danh sách size hiện tại của sản phẩm
+$sql_sizes = "SELECT ss.*, s.kichco 
+              FROM sanpham_size ss 
+              JOIN size s ON ss.sizeid = s.sizeid 
+              WHERE ss.sanphamid = ? 
+              ORDER BY s.sizeid";
+$stmt_sizes = $conn->prepare($sql_sizes);
+$stmt_sizes->bind_param("i", $sanphamid);
+$stmt_sizes->execute();
+$result_sizes = $stmt_sizes->get_result();
+
+// Lấy danh sách tất cả size có sẵn
+$sql_all_sizes = "SELECT * FROM size ORDER BY sizeid";
+$result_all_sizes = $conn->query($sql_all_sizes);
+
 // Thêm vào đầu file
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
@@ -64,7 +79,6 @@ if(isset($_POST['update_product'])) {
     echo " -->";
     
     $tensanpham = $_POST['tensanpham'];
-    $tonkho = $_POST['tonkho'];
     $gia = str_replace(['.', ','], '', $_POST['gia']);
     $madanhmuc = $_POST['madanhmuc'];
     $mota = $_POST['mota'];
@@ -105,17 +119,34 @@ if(isset($_POST['update_product'])) {
     // Cập nhật thông tin sản phẩm
     $sql = "UPDATE sanpham SET 
             tensanpham = ?, 
-            tonkho = ?, 
             gia = ?, 
             madanhmuc = ?,
             mota = ?
             WHERE sanphamid = ?";
             
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("sidisi", $tensanpham, $tonkho, $gia, $madanhmuc, $mota, $sanphamid);
+    $stmt->bind_param("sdisi", $tensanpham, $gia, $madanhmuc, $mota, $sanphamid);
     
     if($stmt->execute()) {
-        // Thay vì exit() ngay lập tức, set một biến để hiển thị thông báo sau
+        // Xử lý cập nhật size và số lượng
+        if(isset($_POST['sizes']) && is_array($_POST['sizes'])) {
+            // Xóa tất cả size cũ
+            $sql_delete_sizes = "DELETE FROM sanpham_size WHERE sanphamid = ?";
+            $stmt_delete = $conn->prepare($sql_delete_sizes);
+            $stmt_delete->bind_param("i", $sanphamid);
+            $stmt_delete->execute();
+            
+            // Thêm size mới
+            foreach($_POST['sizes'] as $sizeid => $soluong) {
+                if($soluong > 0) {
+                    $sql_insert_size = "INSERT INTO sanpham_size (sanphamid, sizeid, soluong) VALUES (?, ?, ?)";
+                    $stmt_insert_size = $conn->prepare($sql_insert_size);
+                    $stmt_insert_size->bind_param("iii", $sanphamid, $sizeid, $soluong);
+                    $stmt_insert_size->execute();
+                }
+            }
+        }
+        
         $update_success = true;
     } else {
         $update_error = $stmt->error;
@@ -198,6 +229,89 @@ if(isset($_POST['update_product'])) {
       border: 1px solid #fff;
       color: #fff;
       width: 150px;
+    }
+    
+    .size-table {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 20px;
+    }
+    
+    .size-table .table {
+      margin-bottom: 0;
+    }
+    
+    .size-table .table th {
+      background: #28a745;
+      color: white;
+      border-color: #28a745;
+    }
+    
+    .size-table .table td {
+      vertical-align: middle;
+    }
+    
+    .badge-info {
+      background-color: #17a2b8;
+      color: white;
+      font-size: 12px;
+      padding: 5px 10px;
+    }
+    
+    .section-title {
+      color: #28a745;
+      border-bottom: 2px solid #28a745;
+      padding-bottom: 8px;
+      margin-bottom: 20px;
+      font-weight: 600;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    .size-table {
+      max-width: 400px;
+    }
+    
+    .size-table .table th {
+      background: #28a745;
+      color: white;
+      border-color: #28a745;
+      font-size: 14px;
+    }
+    
+    .size-table .table td {
+      vertical-align: middle;
+      padding: 12px 8px;
+    }
+    
+    #thumbbox {
+      text-align: center;
+      margin: 15px 0;
+    }
+    
+    #thumbbox img {
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .btn {
+      margin: 0 5px;
+      padding: 8px 20px;
+    }
+    
+    .btn-save {
+      background-color: #28a745;
+      border-color: #28a745;
+    }
+    
+    .btn-cancel {
+      background-color: #6c757d;
+      border-color: #6c757d;
+    }
       text-align: center;
       text-decoration: none;
       cursor: pointer;
@@ -319,19 +433,18 @@ if(isset($_POST['update_product'])) {
                     <div class="tile-body">
                         <?php if(isset($sanpham)): ?>
                         <form class="row" method="POST" enctype="multipart/form-data">
-                            <div class="form-group col-md-3">
+                            <!-- Thông tin cơ bản -->
+                            <div class="col-md-12">
+                                <h5 class="section-title">Thông tin cơ bản</h5>
+                            </div>
+                            <div class="form-group col-md-2">
                                 <label class="control-label">Mã sản phẩm</label>
                                 <input class="form-control" type="text" value="<?php echo $sanpham['sanphamid']; ?>" readonly>
                             </div>
-                            <div class="form-group col-md-3">
+                            <div class="form-group col-md-4">
                                 <label class="control-label">Tên sản phẩm</label>
                                 <input class="form-control" type="text" name="tensanpham" 
                                        value="<?php echo htmlspecialchars($sanpham['tensanpham']); ?>" required>
-                            </div>
-                            <div class="form-group col-md-3">
-                                <label class="control-label">Số lượng</label>
-                                <input class="form-control" type="number" name="tonkho" 
-                                       value="<?php echo $sanpham['tonkho']; ?>" required>
                             </div>
                             <div class="form-group col-md-3">
                                 <label class="control-label">Giá bán</label>
@@ -339,7 +452,7 @@ if(isset($_POST['update_product'])) {
                                        value="<?php echo number_format($sanpham['gia'], 0, ',', '.'); ?>" required>
                             </div>
                             <div class="form-group col-md-3">
-                                <label for="exampleSelect1" class="control-label">Danh mục</label>
+                                <label class="control-label">Danh mục</label>
                                 <select class="form-control" name="madanhmuc" required>
                                     <?php 
                                     while($danhmuc = $result_danhmuc->fetch_assoc()) {
@@ -350,15 +463,66 @@ if(isset($_POST['update_product'])) {
                                     ?>
                                 </select>
                             </div>
-                            <div class="form-group col-md-12">
+                            
+                            <!-- Quản lý Size -->
+                            <div class="col-md-12">
+                                <h5 class="section-title">Quản lý Size và Số lượng</h5>
+                            </div>
+                            <div class="form-group col-md-6">
+                                <div class="table-responsive size-table">
+                                    <table class="table table-bordered">
+                                        <thead>
+                                            <tr>
+                                                <th width="40%">Size</th>
+                                                <th width="60%">Số lượng</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php 
+                                            // Tạo mảng để lưu size hiện tại
+                                            $current_sizes = array();
+                                            while($size_row = $result_sizes->fetch_assoc()) {
+                                                $current_sizes[$size_row['sizeid']] = $size_row['soluong'];
+                                            }
+                                            
+                                            // Reset pointer để có thể fetch lại
+                                            $result_all_sizes->data_seek(0);
+                                            
+                                            while($size = $result_all_sizes->fetch_assoc()) {
+                                                $current_qty = isset($current_sizes[$size['sizeid']]) ? $current_sizes[$size['sizeid']] : 0;
+                                                ?>
+                                                <tr>
+                                                    <td><strong><?php echo $size['kichco']; ?></strong></td>
+                                                    <td>
+                                                        <input type="number" 
+                                                               class="form-control" 
+                                                               name="sizes[<?php echo $size['sizeid']; ?>]" 
+                                                               value="<?php echo $current_qty; ?>" 
+                                                               min="0" 
+                                                               style="width: 80px;">
+                                                    </td>
+                                                </tr>
+                                                <?php
+                                            }
+                                            ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <small class="form-text text-muted">
+                                    Nhập số lượng cho từng size. Size có số lượng = 0 sẽ không được lưu.
+                                </small>
+                            </div>
+                            
+                            <!-- Ảnh sản phẩm -->
+                            <div class="form-group col-md-6">
                                 <label class="control-label">Ảnh sản phẩm</label>
                                 <div id="myfileupload">
                                     <input type="file" id="uploadfile" name="image" onchange="readURL(this);" />
                                 </div>
                                 <div id="thumbbox">
-                                    <img height="450" width="400" alt="Thumb image" id="thumbimage" 
+                                    <img height="300" width="250" alt="Thumb image" id="thumbimage" 
                                          src="<?php echo $sanpham['duongdan'] ? 'picture/'.$sanpham['duongdan'] : ''; ?>" 
-                                         style="display: <?php echo $sanpham['duongdan'] ? 'block' : 'none'; ?>" />
+                                         style="display: <?php echo $sanpham['duongdan'] ? 'block' : 'none'; ?>; max-width: 100%;" />
                                     <a class="removeimg" href="javascript:"></a>
                                 </div>
                                 <div id="boxchoice">
@@ -368,16 +532,26 @@ if(isset($_POST['update_product'])) {
                                     <p style="clear:both"></p>
                                 </div>
                             </div>
+                            
+                            <!-- Mô tả sản phẩm -->
+                            <div class="col-md-12">
+                                <h5 class="section-title">Mô tả sản phẩm</h5>
+                            </div>
                             <div class="form-group col-md-12">
-                                <label class="control-label">Mô tả sản phẩm</label>
-                                <textarea class="form-control" name="mota" id="mota">
+                                <textarea class="form-control" name="mota" id="mota" rows="6">
                                     <?php echo htmlspecialchars($sanpham['mota']); ?>
                                 </textarea>
                                 <script>CKEDITOR.replace('mota');</script>
                             </div>
-                            <div class="form-group col-md-12">
-                                <button class="btn btn-save" type="submit" name="update_product">Lưu lại</button>
-                                <a class="btn btn-cancel" href="table-data-product.php">Hủy bỏ</a>
+                            
+                            <!-- Nút điều khiển -->
+                            <div class="form-group col-md-12 text-center">
+                                <button class="btn btn-save" type="submit" name="update_product">
+                                    <i class="fas fa-save"></i> Lưu lại
+                                </button>
+                                <a class="btn btn-cancel" href="table-data-product.php">
+                                    <i class="fas fa-times"></i> Hủy bỏ
+                                </a>
                             </div>
                         </form>
                         <?php else: ?>
@@ -430,6 +604,27 @@ if(isset($_POST['update_product'])) {
         });
         reader.readAsDataURL(file);
       }
+    });
+
+    // Thêm validation cho form size
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function(e) {
+            const sizeInputs = document.querySelectorAll('input[name^="sizes"]');
+            let hasValidSize = false;
+            
+            sizeInputs.forEach(function(input) {
+                if (parseInt(input.value) > 0) {
+                    hasValidSize = true;
+                }
+            });
+            
+            if (!hasValidSize) {
+                e.preventDefault();
+                alert('Vui lòng nhập ít nhất một size với số lượng > 0');
+                return false;
+            }
+        });
     });
 
   </script>

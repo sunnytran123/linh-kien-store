@@ -12,14 +12,13 @@ if(isset($_POST['add_product'])) {
     $tensanpham = $_POST['tensanpham'];
     $mota = $_POST['mota'];
     $gia = str_replace(['.', ','], '', $_POST['gia']); // Chuyển đổi định dạng tiền về số
-    $tonkho = $_POST['tonkho'];
     $madanhmuc = $_POST['madanhmuc'];
 
     // Thêm sản phẩm vào database
-    $sql = "INSERT INTO sanpham (tensanpham, mota, gia, tonkho, madanhmuc) 
-            VALUES (?, ?, ?, ?, ?)";
+    $sql = "INSERT INTO sanpham (tensanpham, mota, gia, madanhmuc) 
+            VALUES (?, ?, ?, ?)";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("ssdii", $tensanpham, $mota, $gia, $tonkho, $madanhmuc);
+    $stmt->bind_param("ssdi", $tensanpham, $mota, $gia, $madanhmuc);
 
     if($stmt->execute()) {
         $sanphamid = $stmt->insert_id;
@@ -50,6 +49,18 @@ if(isset($_POST['add_product'])) {
             }
             }
         }
+        
+        // Xử lý thêm size và số lượng
+        if(isset($_POST['sizes']) && is_array($_POST['sizes'])) {
+            foreach($_POST['sizes'] as $sizeid => $soluong) {
+                if($soluong > 0) {
+                    $sql_insert_size = "INSERT INTO sanpham_size (sanphamid, sizeid, soluong) VALUES (?, ?, ?)";
+                    $stmt_insert_size = $conn->prepare($sql_insert_size);
+                    $stmt_insert_size->bind_param("iii", $sanphamid, $sizeid, $soluong);
+                    $stmt_insert_size->execute();
+                }
+            }
+        }
 
         echo "<script>
                 swal('Thành công!', 'Đã thêm sản phẩm mới', 'success').then(function() {
@@ -66,6 +77,10 @@ if(isset($_POST['add_product'])) {
 // Lấy danh sách danh mục
 $sql_danhmuc = "SELECT * FROM danhmuc";
 $result_danhmuc = $conn->query($sql_danhmuc);
+
+// Lấy danh sách tất cả size có sẵn
+$sql_all_sizes = "SELECT * FROM size ORDER BY sizeid";
+$result_all_sizes = $conn->query($sql_all_sizes);
 ?>
 
 
@@ -151,6 +166,60 @@ $result_danhmuc = $conn->query($sql_danhmuc);
       font-weight: 500;
       align-items: center;
       justify-content: center;
+    }
+    
+    .section-title {
+      color: #28a745;
+      border-bottom: 2px solid #28a745;
+      padding-bottom: 8px;
+      margin-bottom: 20px;
+      font-weight: 600;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    .size-table {
+      max-width: 400px;
+    }
+    
+    .size-table .table th {
+      background: #28a745;
+      color: white;
+      border-color: #28a745;
+      font-size: 14px;
+    }
+    
+    .size-table .table td {
+      vertical-align: middle;
+      padding: 12px 8px;
+    }
+    
+    #thumbbox {
+      text-align: center;
+      margin: 15px 0;
+    }
+    
+    #thumbbox img {
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .btn {
+      margin: 0 5px;
+      padding: 8px 20px;
+    }
+    
+    .btn-save {
+      background-color: #28a745;
+      border-color: #28a745;
+    }
+    
+    .btn-cancel {
+      background-color: #6c757d;
+      border-color: #6c757d;
     }
 
     .Choicefile:hover {
@@ -263,17 +332,22 @@ $result_danhmuc = $conn->query($sql_danhmuc);
                     <h3 class="tile-title">Tạo mới sản phẩm</h3>
                     <div class="tile-body">
                         <form class="row" method="POST" enctype="multipart/form-data">
-                            <div class="form-group col-md-3">
+                            <!-- Thông tin cơ bản -->
+                            <div class="col-md-12">
+                                <h5 class="section-title">Thông tin cơ bản</h5>
+                            </div>
+                            <div class="form-group col-md-4">
                                 <label class="control-label">Tên sản phẩm</label>
                                 <input class="form-control" type="text" name="tensanpham" required>
                             </div>
-                            <div class="form-group col-md-3">
-                                <label class="control-label">Số lượng</label>
-                                <input class="form-control" type="number" name="tonkho" required>
+                            <div class="form-group col-md-4">
+                                <label class="control-label">Giá bán</label>
+                                <input class="form-control" type="text" name="gia" required>
                             </div>
-                            <div class="form-group col-md-3">
-                                <label for="exampleSelect1" class="control-label">Danh mục</label>
-                                <select class="form-control" name="madanhmuc">
+                            <div class="form-group col-md-4">
+                                <label class="control-label">Danh mục</label>
+                                <select class="form-control" name="madanhmuc" required>
+                                    <option value="">Chọn danh mục</option>
                                     <?php while($danhmuc = $result_danhmuc->fetch_assoc()) { ?>
                                         <option value="<?php echo $danhmuc['danhmucid']; ?>">
                                             <?php echo $danhmuc['tendanhmuc']; ?>
@@ -281,17 +355,54 @@ $result_danhmuc = $conn->query($sql_danhmuc);
                                     <?php } ?>
                                 </select>
                             </div>
-                            <div class="form-group col-md-3">
-                                <label class="control-label">Giá bán</label>
-                                <input class="form-control" type="text" name="gia" required>
+                            
+                            <!-- Quản lý Size -->
+                            <div class="col-md-12">
+                                <h5 class="section-title">Quản lý Size và Số lượng</h5>
                             </div>
-                            <div class="form-group col-md-12">
+                            <div class="form-group col-md-6">
+                                <div class="table-responsive size-table">
+                                    <table class="table table-bordered">
+                                        <thead>
+                                            <tr>
+                                                <th width="40%">Size</th>
+                                                <th width="60%">Số lượng</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php 
+                                            while($size = $result_all_sizes->fetch_assoc()) {
+                                                ?>
+                                                <tr>
+                                                    <td><strong><?php echo $size['kichco']; ?></strong></td>
+                                                    <td>
+                                                        <input type="number" 
+                                                               class="form-control" 
+                                                               name="sizes[<?php echo $size['sizeid']; ?>]" 
+                                                               value="0" 
+                                                               min="0" 
+                                                               style="width: 80px;">
+                                                    </td>
+                                                </tr>
+                                                <?php
+                                            }
+                                            ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <small class="form-text text-muted">
+                                    Nhập số lượng cho từng size. Size có số lượng = 0 sẽ không được lưu.
+                                </small>
+                            </div>
+                            
+                            <!-- Ảnh sản phẩm -->
+                            <div class="form-group col-md-6">
                                 <label class="control-label">Ảnh sản phẩm</label>
                                 <div id="myfileupload">
                                     <input type="file" id="uploadfile" name="image" onchange="readURL(this);" />
                                 </div>
                                 <div id="thumbbox">
-                                    <img height="450" width="400" alt="Thumb image" id="thumbimage" style="display: none" />
+                                    <img height="300" width="250" alt="Thumb image" id="thumbimage" style="display: none; max-width: 100%;" />
                                     <a class="removeimg" href="javascript:"></a>
                                 </div>
                                 <div id="boxchoice">
@@ -301,14 +412,24 @@ $result_danhmuc = $conn->query($sql_danhmuc);
                                     <p style="clear:both"></p>
                                 </div>
                             </div>
-                            <div class="form-group col-md-12">
-                                <label class="control-label">Mô tả sản phẩm</label>
-                                <textarea class="form-control" name="mota" id="mota"></textarea>
-                                <script>CKEDITOR.replace('mota');</script>
+                            
+                            <!-- Mô tả sản phẩm -->
+                            <div class="col-md-12">
+                                <h5 class="section-title">Mô tả sản phẩm</h5>
                             </div>
                             <div class="form-group col-md-12">
-                                <button class="btn btn-save" type="submit" name="add_product">Lưu lại</button>
-                                <a class="btn btn-cancel" href="table-data-product.php">Hủy bỏ</a>
+                                <textarea class="form-control" name="mota" id="mota" rows="6"></textarea>
+                                <script>CKEDITOR.replace('mota');</script>
+                            </div>
+                            
+                            <!-- Nút điều khiển -->
+                            <div class="form-group col-md-12 text-center">
+                                <button class="btn btn-save" type="submit" name="add_product">
+                                    <i class="fas fa-save"></i> Lưu lại
+                                </button>
+                                <a class="btn btn-cancel" href="table-data-product.php">
+                                    <i class="fas fa-times"></i> Hủy bỏ
+                                </a>
                             </div>
                         </form>
                     </div>
@@ -464,6 +585,27 @@ MODAL
         });
         reader.readAsDataURL(file);
       }
+    });
+
+    // Thêm validation cho form size
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function(e) {
+            const sizeInputs = document.querySelectorAll('input[name^="sizes"]');
+            let hasValidSize = false;
+            
+            sizeInputs.forEach(function(input) {
+                if (parseInt(input.value) > 0) {
+                    hasValidSize = true;
+                }
+            });
+            
+            if (!hasValidSize) {
+                e.preventDefault();
+                alert('Vui lòng nhập ít nhất một size với số lượng > 0');
+                return false;
+            }
+        });
     });
 
   </script>
