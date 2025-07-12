@@ -148,7 +148,7 @@ $result = $conn->query($sql);
                       class="fas fa-file-pdf"></i> Xuất PDF</a>
                 </div>
                 <div class="col-sm-2">
-                  <a class="btn btn-delete btn-sm" type="button" title="Xóa" onclick="myFunction(this)"><i
+                  <a class="btn btn-delete btn-sm" type="button" title="Xóa" onclick="deleteAllOrders()"><i
                       class="fas fa-trash-alt"></i> Xóa tất cả </a>
                 </div>
               </div>
@@ -185,7 +185,7 @@ $result = $conn->query($sql);
                             }
                     ?>
                             <tr>
-                                <td width="10"><input type="checkbox" name="check1" value="1"></td>
+                                <td width="10"><input type="checkbox" name="check<?php echo $row['donhangid']; ?>" value="<?php echo $row['donhangid']; ?>"></td>
                                 <td>DH<?php echo str_pad($row['donhangid'], 5, '0', STR_PAD_LEFT); ?></td>
                                 <td><?php echo htmlspecialchars($row['ten_dang_nhap']); ?></td>
                                 <td><?php echo date('d/m/Y H:i', strtotime($row['ngaydat'])); ?></td>
@@ -254,6 +254,49 @@ $result = $conn->query($sql);
             }
         });
     });
+
+    // Hàm xóa tất cả đơn hàng đã chọn
+    function deleteAllOrders() {
+        var selectedIds = [];
+        $('input[name^="check"]:checked').each(function() {
+            selectedIds.push($(this).val());
+        });
+        
+        if (selectedIds.length === 0) {
+            swal("Thông báo", "Vui lòng chọn ít nhất một đơn hàng để xóa", "warning");
+            return;
+        }
+        
+        swal({
+            title: "Cảnh báo",
+            text: "Bạn có chắc chắn muốn xóa " + selectedIds.length + " đơn hàng đã chọn?",
+            buttons: ["Hủy bỏ", "Đồng ý"],
+            dangerMode: true,
+        })
+        .then((willDelete) => {
+            if (willDelete) {
+                $.ajax({
+                    url: 'delete_orders.php',
+                    type: 'POST',
+                    data: {ids: selectedIds},
+                    dataType: 'json',
+                    success: function(response) {
+                        if(response.status === 'success') {
+                            swal("Thành công!", "Đã xóa " + response.deleted_count + " đơn hàng", "success")
+                            .then(() => {
+                                location.reload();
+                            });
+                        } else {
+                            swal("Thất bại!", response.message || "Không thể xóa đơn hàng", "error");
+                        }
+                    },
+                    error: function() {
+                        swal("Thất bại!", "Có lỗi xảy ra", "error");
+                    }
+                });
+            }
+        });
+    }
     // function deleteRow(r) {
     //   var i = r.parentNode.parentNode.rowIndex;
     //   document.getElementById("myTable").deleteRow(i);

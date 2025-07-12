@@ -253,7 +253,7 @@ $result_danhmuc = $conn->query($sql_danhmuc);
                                   class="fas fa-file-pdf"></i> Xuất PDF</a>
                             </div>
                             <div class="col-sm-2">
-                              <a class="btn btn-delete btn-sm" type="button" title="Xóa" onclick="myFunction(this)"><i
+                              <a class="btn btn-delete btn-sm" type="button" title="Xóa" onclick="deleteAllProducts()"><i
                                   class="fas fa-trash-alt"></i> Xóa tất cả </a>
                             </div>
                           </div>
@@ -281,7 +281,7 @@ $result_danhmuc = $conn->query($sql_danhmuc);
                                               '<span class="badge bg-danger">Hết hàng</span>';
                                           ?>
                                           <tr>
-                                              <td width="10"><input type="checkbox" name="check1" value="1"></td>
+                                              <td width="10"><input type="checkbox" name="check<?php echo $row['sanphamid']; ?>" value="<?php echo $row['sanphamid']; ?>"></td>
                                               <td class="text-center"><?php echo $row['sanphamid']; ?></td>
                                               <td><?php echo $row['tensanpham']; ?></td>
                                               <td>
@@ -441,6 +441,49 @@ MODAL
                 }
             });
         });
+
+        // Hàm xóa tất cả sản phẩm đã chọn
+        function deleteAllProducts() {
+            var selectedIds = [];
+            $('input[name^="check"]:checked').each(function() {
+                selectedIds.push($(this).val());
+            });
+            
+            if (selectedIds.length === 0) {
+                swal("Thông báo", "Vui lòng chọn ít nhất một sản phẩm để xóa", "warning");
+                return;
+            }
+            
+            swal({
+                title: "Cảnh báo",
+                text: "Bạn có chắc chắn muốn xóa " + selectedIds.length + " sản phẩm đã chọn?",
+                buttons: ["Hủy bỏ", "Đồng ý"],
+                dangerMode: true,
+            })
+            .then((willDelete) => {
+                if (willDelete) {
+                    $.ajax({
+                        url: 'delete_products.php',
+                        type: 'POST',
+                        data: {ids: selectedIds},
+                        dataType: 'json',
+                        success: function(response) {
+                            if(response.status === 'success') {
+                                swal("Thành công!", "Đã xóa " + response.deleted_count + " sản phẩm", "success")
+                                .then(() => {
+                                    location.reload();
+                                });
+                            } else {
+                                swal("Thất bại!", response.message || "Không thể xóa sản phẩm", "error");
+                            }
+                        },
+                        error: function() {
+                            swal("Thất bại!", "Có lỗi xảy ra", "error");
+                        }
+                    });
+                }
+            });
+        }
         
         //Thời Gian
     function time() {

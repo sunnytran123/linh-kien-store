@@ -158,6 +158,10 @@ $result_sanpham = $conn->query($sql_sanpham);
                                     <i class="fas fa-plus"></i> Tạo khuyến mãi mới
                                 </a>
                             </div>
+                            <div class="col-sm-2">
+                                <a class="btn btn-delete btn-sm" type="button" title="Xóa" onclick="deleteAllPromotions()"><i
+                                    class="fas fa-trash-alt"></i> Xóa tất cả </a>
+                            </div>
                         </div>
                         <table class="table table-hover table-bordered" id="sampleTable">
                             <thead>
@@ -190,7 +194,7 @@ $result_sanpham = $conn->query($sql_sanpham);
                                         }
                                         ?>
                                         <tr>
-                                            <td width="10"><input type="checkbox" name="check1" value="1"></td>
+                                            <td width="10"><input type="checkbox" name="check<?php echo $row['khuyenmaiid']; ?>" value="<?php echo $row['khuyenmaiid']; ?>"></td>
                                             <td><?php echo $row['tenkhuyenmai']; ?></td>
                                             <td><?php echo number_format($row['giatri'], 0, ',', '.'); ?> VNĐ</td>
                                             <td><?php echo date('d/m/Y H:i', strtotime($row['ngaybatdau'])); ?></td>
@@ -307,6 +311,49 @@ $result_sanpham = $conn->query($sql_sanpham);
                 }
             });
         });
+
+        // Hàm xóa tất cả khuyến mãi đã chọn
+        function deleteAllPromotions() {
+            var selectedIds = [];
+            $('input[name^="check"]:checked').each(function() {
+                selectedIds.push($(this).val());
+            });
+            
+            if (selectedIds.length === 0) {
+                swal("Thông báo", "Vui lòng chọn ít nhất một khuyến mãi để xóa", "warning");
+                return;
+            }
+            
+            swal({
+                title: "Cảnh báo",
+                text: "Bạn có chắc chắn muốn xóa " + selectedIds.length + " khuyến mãi đã chọn?",
+                buttons: ["Hủy bỏ", "Đồng ý"],
+                dangerMode: true,
+            })
+            .then((willDelete) => {
+                if (willDelete) {
+                    $.ajax({
+                        url: 'delete_promotions.php',
+                        type: 'POST',
+                        data: {ids: selectedIds},
+                        dataType: 'json',
+                        success: function(response) {
+                            if(response.status === 'success') {
+                                swal("Thành công!", "Đã xóa " + response.deleted_count + " khuyến mãi", "success")
+                                .then(() => {
+                                    location.reload();
+                                });
+                            } else {
+                                swal("Thất bại!", response.message || "Không thể xóa khuyến mãi", "error");
+                            }
+                        },
+                        error: function() {
+                            swal("Thất bại!", "Có lỗi xảy ra", "error");
+                        }
+                    });
+                }
+            });
+        }
 
         function deleteKhuyenMai(khuyenmaiid) {
             swal({

@@ -178,7 +178,7 @@ $result = $conn->query($sql);
                     class="fas fa-file-pdf"></i> Xuất PDF</a>
               </div>
               <div class="col-sm-2">
-                <a class="btn btn-delete btn-sm" type="button" title="Xóa" onclick="myFunction(this)"><i
+                <a class="btn btn-delete btn-sm" type="button" title="Xóa" onclick="deleteAllCustomers()"><i
                     class="fas fa-trash-alt"></i> Xóa tất cả </a>
               </div>
             </div>
@@ -320,6 +320,49 @@ $(document).ready(function() {
         }
     });
 });
+
+// Hàm xóa tất cả khách hàng đã chọn
+function deleteAllCustomers() {
+    var selectedIds = [];
+    $('input[name^="check"]:checked').each(function() {
+        selectedIds.push($(this).val());
+    });
+    
+    if (selectedIds.length === 0) {
+        swal("Thông báo", "Vui lòng chọn ít nhất một khách hàng để xóa", "warning");
+        return;
+    }
+    
+    swal({
+        title: "Cảnh báo",
+        text: "Bạn có chắc chắn muốn xóa " + selectedIds.length + " khách hàng đã chọn?",
+        buttons: ["Hủy bỏ", "Đồng ý"],
+        dangerMode: true,
+    })
+    .then((willDelete) => {
+        if (willDelete) {
+            $.ajax({
+                url: 'delete_customers.php',
+                type: 'POST',
+                data: {ids: selectedIds},
+                dataType: 'json',
+                success: function(response) {
+                    if(response.status === 'success') {
+                        swal("Thành công!", "Đã xóa " + response.deleted_count + " khách hàng", "success")
+                        .then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        swal("Thất bại!", response.message || "Không thể xóa khách hàng", "error");
+                    }
+                },
+                error: function() {
+                    swal("Thất bại!", "Có lỗi xảy ra", "error");
+                }
+            });
+        }
+    });
+}
 
 // Xử lý xóa người dùng
 function deleteStaff(id) {

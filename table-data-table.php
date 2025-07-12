@@ -24,6 +24,33 @@ if(isset($_POST['id'])) {
         exit;
     }
     
+    // Xử lý xóa nhiều nhân viên
+    if(isset($_POST['action']) && $_POST['action'] == 'deleteMultiple') {
+        $ids = $_POST['id']; // Mảng các ID
+        
+        $success_count = 0;
+        $error_count = 0;
+        
+        foreach($ids as $id) {
+            $sql = "DELETE FROM nguoi_dung WHERE id = ? AND loai = 2";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("i", $id);
+            
+            if($stmt->execute()) {
+                $success_count++;
+            } else {
+                $error_count++;
+            }
+        }
+        
+        if($error_count == 0) {
+            echo json_encode(['status' => 'success', 'message' => "Đã xóa thành công $success_count nhân viên"]);
+        } else {
+            echo json_encode(['status' => 'partial', 'message' => "Đã xóa thành công $success_count nhân viên, $error_count lỗi"]);
+        }
+        exit;
+    }
+    
     // Xử lý cập nhật người dùng
     if(isset($_POST['action']) && $_POST['action'] == 'update') {
         $id = $_POST['id'];
@@ -179,8 +206,8 @@ $result = $conn->query($sql);
                     class="fas fa-file-pdf"></i> Xuất PDF</a>
               </div>
               <div class="col-sm-2">
-                <a class="btn btn-delete btn-sm" type="button" title="Xóa" onclick="myFunction(this)"><i
-                    class="fas fa-trash-alt"></i> Xóa tất cả </a>
+                <button class="btn btn-delete btn-sm" type="button" title="Xóa" id="deleteSelected"><i
+                    class="fas fa-trash-alt"></i> Xóa tất cả </button>
               </div>
             </div>
             <table class="table table-hover table-bordered js-copytextarea" cellpadding="0" cellspacing="0" border="0"
@@ -319,6 +346,52 @@ $(document).ready(function() {
         } else {
             $('#selectAll').prop('checked', false);
         }
+    });
+    
+    // Xử lý nút "Xóa tất cả"
+    $('#deleteSelected').click(function() {
+        var checkedIds = [];
+        $('input[name^="check"]:checked').each(function() {
+            checkedIds.push($(this).val());
+        });
+        
+        if (checkedIds.length === 0) {
+            swal("Thông báo", "Vui lòng chọn ít nhất một nhân viên để xóa", "warning");
+            return;
+        }
+        
+        swal({
+            title: "Cảnh báo",
+            text: "Bạn có chắc chắn muốn xóa " + checkedIds.length + " nhân viên đã chọn?",
+            buttons: ["Hủy bỏ", "Đồng ý"],
+            dangerMode: true,
+        })
+        .then((willDelete) => {
+            if (willDelete) {
+                $.ajax({
+                    url: 'table-data-table.php',
+                    type: 'POST',
+                    data: { 
+                        id: checkedIds,
+                        action: 'deleteMultiple'
+                    },
+                    dataType: 'json',
+                    success: function(response) {
+                        if(response.status === 'success' || response.status === 'partial') {
+                            swal("Thành công!", response.message, "success")
+                            .then(() => {
+                                location.reload();
+                            });
+                        } else {
+                            swal("Thất bại!", "Không thể xóa nhân viên", "error");
+                        }
+                    },
+                    error: function() {
+                        swal("Thất bại!", "Có lỗi xảy ra", "error");
+                    }
+                });
+            }
+        });
     });
 });
 
