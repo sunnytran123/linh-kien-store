@@ -80,6 +80,8 @@ $result_danhmuc = $conn->query($sql_danhmuc);
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <!-- Main CSS-->
   <link rel="stylesheet" type="text/css" href="css/main.css">
+  <!-- Custom Admin CSS -->
+  <link rel="stylesheet" type="text/css" href="css/admin-custom.css">
   <!-- Font-icon css-->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/boxicons@latest/css/boxicons.min.css">
   <!-- or -->

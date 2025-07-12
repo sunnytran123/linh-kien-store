@@ -617,8 +617,7 @@ if (!isset($_SESSION['id']) || !isset($_SESSION['loai'])) {
 
 <?php include 'footer.php'; ?>
 
-<!-- Edit Variant Modal -->
-<div id="editVariantModal" class="modal-overlay" style="display:none;">
+ <div id="editVariantModal" class="modal-overlay" style="display:none;">
     <div class="modal-content">
         <span class="close-modal" onclick="closeEditVariantModal()">&times;</span>
         <div id="variantModalContent">

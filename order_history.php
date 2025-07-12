@@ -75,6 +75,24 @@ if ($statusFilter !== 'all') {
 
 $stmt->execute();
 $orders = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+
+// Xử lý hủy đơn hàng
+if (isset($_GET['cancel_order_id'])) {
+    $cancelOrderId = intval($_GET['cancel_order_id']);
+    // Kiểm tra đơn thuộc user và trạng thái là 'Chờ xác nhận'
+    $checkStmt = $conn->prepare("SELECT trangthai FROM donhang WHERE donhangid = ? AND manguoidung = ?");
+    $checkStmt->bind_param("ii", $cancelOrderId, $userId);
+    $checkStmt->execute();
+    $checkResult = $checkStmt->get_result()->fetch_assoc();
+    if ($checkResult && $checkResult['trangthai'] === 'Chờ xác nhận') {
+        $updateStmt = $conn->prepare("UPDATE donhang SET trangthai = 'Đã hủy' WHERE donhangid = ?");
+        $updateStmt->bind_param("i", $cancelOrderId);
+        $updateStmt->execute();
+        // Reload lại trang để cập nhật trạng thái
+        header("Location: order_history.php");
+        exit();
+    }
+}
 ?>
 
 <?php
@@ -206,11 +224,11 @@ include 'header.php';
                 <div class="order-content">
                     <?php
                     // Lấy chi tiết sản phẩm trong đơn hàng
-                    $detailQuery = "SELECT ctdh.*, sp.tensanpham, ha.duongdan
-                                   FROM chitietdonhang ctdh
-                                   JOIN sanpham sp ON ctdh.masanpham = sp.sanphamid
-                                   LEFT JOIN hinhanhsanpham ha ON sp.sanphamid = ha.masanpham
-                                   WHERE ctdh.madonhang = ?";
+                    $detailQuery = "SELECT ctdh.*, sp.tensanpham,
+                   (SELECT duongdan FROM hinhanhsanpham WHERE masanpham = sp.sanphamid LIMIT 1) as duongdan
+                FROM chitietdonhang ctdh
+                JOIN sanpham sp ON ctdh.masanpham = sp.sanphamid
+                WHERE ctdh.madonhang = ?";
                     $detailStmt = $conn->prepare($detailQuery);
                     $detailStmt->bind_param("i", $order['donhangid']);
                     $detailStmt->execute();
@@ -232,8 +250,20 @@ include 'header.php';
                 <div class="order-footer">
                     <div class="order-total">
                         <span class="total-label">Tổng tiền:</span>
-                        <span class="total-value"><?php echo number_format($order['tongtien'], 0, ',', '.'); ?> VNĐ</span>
+                        <?php
+                        $calculatedTotal = 0;
+                        foreach ($products as $product) {
+                            $calculatedTotal += $product['soluong'] * $product['gia'];
+                        }
+                        ?>
+                        <span class="total-value"><?php echo number_format($calculatedTotal, 0, ',', '.'); ?> VNĐ</span>
                     </div>
+                    <?php if ($order['trangthai'] === 'Chờ xác nhận'): ?>
+                        <form method="get" style="margin:0;">
+                            <input type="hidden" name="cancel_order_id" value="<?php echo $order['donhangid']; ?>">
+                            <button type="submit" class="btn-cancel-order" onclick="return confirm('Bạn có chắc chắn muốn hủy đơn hàng này?');" style="background:#e53935;color:#fff;border:none;padding:8px 18px;border-radius:5px;font-size:15px;cursor:pointer;">Hủy đơn</button>
+                        </form>
+                    <?php endif; ?>
                 </div>
             </div>
         <?php endforeach; ?>

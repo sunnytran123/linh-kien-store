@@ -342,6 +342,65 @@ include 'header.php';
         padding: 0 5px;
     }
 }
+/* --- Order summary chuyên nghiệp hơn --- */
+.order-summary {
+    background: #fff;
+    padding: 32px 28px;
+    border-radius: 14px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    border: 1px solid #e0e0e0;
+    position: sticky;
+    top: 20px;
+    min-width: 340px;
+}
+.product-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 18px;
+    padding: 18px 0 12px 0;
+    border-bottom: 1px solid #f0f0f0;
+    margin-bottom: 10px;
+}
+.product-item img {
+    width: 90px;
+    height: 90px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid #eee;
+}
+.product-info {
+    flex: 1;
+    min-width: 0;
+}
+.product-info h3 {
+    font-size: 17px;
+    color: #222;
+    margin: 0 0 6px 0;
+    font-weight: 600;
+}
+.product-info p {
+    margin: 0 0 4px 0;
+    font-size: 15px;
+    color: #555;
+}
+.summary-items {
+    margin-top: 24px;
+}
+.summary-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    color: #444;
+    font-size: 16px;
+}
+.summary-item.total {
+    font-weight: bold;
+    font-size: 20px;
+    border-top: 2px solid #eee;
+    margin-top: 24px;
+    padding-top: 18px;
+    color: #2e7d32;
+}
 </style>
 
 <div class="checkout-container">
@@ -359,9 +418,22 @@ include 'header.php';
                     <input type="tel" id="phone" name="phone" required pattern="0[0-9]{9,}" title="Số điện thoại phải bắt đầu bằng số 0 và phải từ 10 số trở lên" minlength="10">
                 </div>
                 <div class="form-group">
-                    <label for="address">Địa chỉ giao hàng</label>
-                    <input type="text" id="address" name="address" required>
+                    <label for="province">Tỉnh/Thành phố</label>
+                    <select id="province" name="province" required style="width:100%;padding:12px;border:1px solid #ddd;border-radius:5px;font-size:16px;"></select>
                 </div>
+                <div class="form-group">
+                    <label for="district">Quận/Huyện</label>
+                    <select id="district" name="district" required style="width:100%;padding:12px;border:1px solid #ddd;border-radius:5px;font-size:16px;"></select>
+                </div>
+                <div class="form-group">
+                    <label for="ward">Phường/Xã</label>
+                    <select id="ward" name="ward" required style="width:100%;padding:12px;border:1px solid #ddd;border-radius:5px;font-size:16px;"></select>
+                </div>
+                <div class="form-group">
+                    <label for="address_detail">Địa chỉ chi tiết (số nhà, tên đường...)</label>
+                    <input type="text" id="address_detail" name="address_detail" required>
+                </div>
+                <input type="hidden" id="address" name="address">
 
                 <h2 class="form-title">Phương thức thanh toán</h2>
                 <div class="payment-methods">
@@ -492,24 +564,40 @@ include 'header.php';
 </div>
 
 <script>
-// Thêm class selected khi chọn phương thức thanh toán
-document.querySelectorAll('.payment-method').forEach(method => {
-    method.addEventListener('click', function() {
-        // Bỏ selected khỏi tất cả các phương thức
-        document.querySelectorAll('.payment-method').forEach(m => {
-            m.classList.remove('selected');
-        });
-        // Thêm selected vào phương thức được chọn
-        this.classList.add('selected');
-        // Chọn radio button
-        this.querySelector('input[type="radio"]').checked = true;
+// OAI API lấy địa chỉ
+const provinceSelect = document.getElementById('province');
+const districtSelect = document.getElementById('district');
+const wardSelect = document.getElementById('ward');
+
+// Load tỉnh/thành
+fetch('https://provinces.open-api.vn/api/p/').then(res => res.json()).then(data => {
+    provinceSelect.innerHTML = '<option value="">Chọn tỉnh/thành</option>' + data.map(p => `<option value="${p.code}" data-name="${p.name}">${p.name}</option>`).join('');
+});
+
+provinceSelect.addEventListener('change', function() {
+    const provinceCode = this.value;
+    districtSelect.innerHTML = '<option value="">Chọn quận/huyện</option>';
+    wardSelect.innerHTML = '<option value="">Chọn phường/xã</option>';
+    if (!provinceCode) return;
+    fetch(`https://provinces.open-api.vn/api/p/${provinceCode}?depth=2`).then(res => res.json()).then(data => {
+        districtSelect.innerHTML = '<option value="">Chọn quận/huyện</option>' + data.districts.map(d => `<option value="${d.code}" data-name="${d.name}">${d.name}</option>`).join('');
     });
 });
 
-document.querySelector('form').addEventListener('submit', function(e) {
+districtSelect.addEventListener('change', function() {
+    const districtCode = this.value;
+    wardSelect.innerHTML = '<option value="">Chọn phường/xã</option>';
+    if (!districtCode) return;
+    fetch(`https://provinces.open-api.vn/api/d/${districtCode}?depth=2`).then(res => res.json()).then(data => {
+        wardSelect.innerHTML = '<option value="">Chọn phường/xã</option>' + data.wards.map(w => `<option value="${w.code}" data-name="${w.name}">${w.name}</option>`).join('');
+    });
+});
+
+// Khi submit form, ghép địa chỉ đầy đủ
+const checkoutForm = document.querySelector('form');
+checkoutForm.addEventListener('submit', function(e) {
     const fullname = document.querySelector('input[name="fullname"]').value.trim();
     const phone = document.querySelector('input[name="phone"]').value;
-    const address = document.querySelector('input[name="address"]').value.trim();
     
     // Kiểm tra tên
     if (fullname.split(' ').filter(word => word.length > 0).length < 2) {
@@ -525,12 +613,16 @@ document.querySelector('form').addEventListener('submit', function(e) {
         return;
     }
     
-    // Kiểm tra địa chỉ
-    if (address.length < 10) {
+    const provinceName = provinceSelect.options[provinceSelect.selectedIndex]?.getAttribute('data-name') || '';
+    const districtName = districtSelect.options[districtSelect.selectedIndex]?.getAttribute('data-name') || '';
+    const wardName = wardSelect.options[wardSelect.selectedIndex]?.getAttribute('data-name') || '';
+    const detail = document.getElementById('address_detail').value.trim();
+    if (!provinceName || !districtName || !wardName || !detail) {
         e.preventDefault();
-        alert('Vui lòng nhập địa chỉ giao hàng chi tiết!');
+        alert('Vui lòng nhập đầy đủ địa chỉ giao hàng!');
         return;
     }
+    document.getElementById('address').value = `${detail}, ${wardName}, ${districtName}, ${provinceName}`;
 });
 </script>
 <?php include 'footer.php'; ?> 

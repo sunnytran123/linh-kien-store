@@ -1,0 +1,500 @@
+/* CSS tùy chỉnh cho trang admin - Sử dụng chính xác màu từ trang home */
+
+:root {
+  --admin-primary: #8BC34A; /* Màu chính từ trang home */
+  --admin-primary-dark: #689F38; /* Màu đậm hơn */
+  --admin-primary-light: #A5D6A7; /* Màu nhạt hơn */
+  --admin-primary-very-light: #E8F5E8; /* Màu rất nhạt */
+  --admin-secondary: #f5f5f5; /* Màu nền phụ từ trang home */
+  --admin-accent: #8BC34A; /* Màu accent giống trang home */
+  --admin-success: #4CAF50; /* Màu xanh lá success */
+  --admin-info: #2196F3; /* Màu xanh dương info */
+  --admin-warning: #FF9800; /* Màu cam */
+  --admin-danger: #F44336; /* Màu đỏ */
+  --admin-text-primary: #333; /* Màu text chính từ trang home */
+  --admin-text-secondary: #666; /* Màu text phụ từ trang home */
+  --admin-border: #eee; /* Màu viền từ trang home */
+  --admin-background: #FFFFFF; /* Màu nền chính */
+  --admin-background-light: #f5f5f5; /* Màu nền nhạt từ trang home */
+}
+
+/* Header và Navigation */
+.app-header {
+  background-color: var(--admin-primary) !important;
+  border-bottom: 1px solid var(--admin-primary-dark) !important;
+}
+
+.app-sidebar {
+  background-color: var(--admin-background) !important;
+  border-right: 1px solid var(--admin-border) !important;
+}
+
+.app-sidebar__user {
+  background-color: var(--admin-primary) !important;
+  border-radius: 8px !important;
+  margin: 10px !important;
+  padding: 15px !important;
+}
+
+.app-menu__item.active, 
+.app-menu__item:hover, 
+.app-menu__item:focus {
+  background-color: var(--admin-primary) !important;
+  color: white !important;
+  border-radius: 8px !important;
+  margin: 2px 8px !important;
+  transition: all 0.3s ease !important;
+}
+
+.app-menu__item.active .app-menu__icon,
+.app-menu__item:hover .app-menu__icon,
+.app-menu__item:focus .app-menu__icon {
+  color: white !important;
+}
+
+.app-menu__item.active .app-menu__label,
+.app-menu__item:hover .app-menu__label,
+.app-menu__item:focus .app-menu__label {
+  color: white !important;
+}
+
+/* Buttons */
+.btn-primary {
+  background-color: var(--admin-primary) !important;
+  border-color: var(--admin-primary) !important;
+  border-radius: 6px !important;
+  transition: all 0.3s ease !important;
+}
+
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:active {
+  background-color: var(--admin-primary-dark) !important;
+  border-color: var(--admin-primary-dark) !important;
+}
+
+.btn-success {
+  background-color: var(--admin-success) !important;
+  border-color: var(--admin-success) !important;
+  border-radius: 6px !important;
+}
+
+.btn-info {
+  background-color: var(--admin-info) !important;
+  border-color: var(--admin-info) !important;
+  border-radius: 6px !important;
+}
+
+.btn-warning {
+  background-color: var(--admin-warning) !important;
+  border-color: var(--admin-warning) !important;
+  border-radius: 6px !important;
+}
+
+.btn-danger {
+  background-color: var(--admin-danger) !important;
+  border-color: var(--admin-danger) !important;
+  border-radius: 6px !important;
+}
+
+/* Widget cards */
+.widget-small {
+  background: var(--admin-background) !important;
+  border-radius: 8px !important;
+  border: 1px solid var(--admin-border) !important;
+  transition: all 0.3s ease !important;
+}
+
+.widget-small:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+.widget-small.primary.coloured-icon .icon {
+  background-color: var(--admin-primary) !important;
+  border-radius: 50% !important;
+}
+
+.widget-small.info.coloured-icon .icon {
+  background-color: var(--admin-info) !important;
+  border-radius: 50% !important;
+}
+
+.widget-small.warning.coloured-icon .icon {
+  background-color: var(--admin-warning) !important;
+  border-radius: 50% !important;
+}
+
+.widget-small.danger.coloured-icon .icon {
+  background-color: var(--admin-danger) !important;
+  border-radius: 50% !important;
+}
+
+/* Links */
+a {
+  color: var(--admin-primary) !important;
+  transition: color 0.3s ease !important;
+}
+
+a:hover {
+  color: var(--admin-primary-dark) !important;
+  text-decoration: none !important;
+}
+
+/* Breadcrumb */
+.app-breadcrumb .breadcrumb-item a {
+  color: var(--admin-primary) !important;
+}
+
+.app-breadcrumb .breadcrumb-item.active {
+  color: var(--admin-text-secondary) !important;
+}
+
+/* Table styling */
+.table {
+  background: var(--admin-background) !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  border: 1px solid var(--admin-border) !important;
+}
+
+.table-hover tbody tr:hover {
+  background-color: var(--admin-primary-very-light) !important;
+  transition: background-color 0.3s ease !important;
+}
+
+.table thead th {
+  background-color: var(--admin-primary) !important;
+  color: white !important;
+  border: none !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  font-size: 12px !important;
+  letter-spacing: 0.5px !important;
+}
+
+/* Badge colors */
+.badge.bg-primary {
+  background-color: var(--admin-primary) !important;
+  border-radius: 12px !important;
+}
+
+.badge.bg-success {
+  background-color: var(--admin-success) !important;
+  border-radius: 12px !important;
+}
+
+.badge.bg-info {
+  background-color: var(--admin-info) !important;
+  border-radius: 12px !important;
+}
+
+.badge.bg-warning {
+  background-color: var(--admin-warning) !important;
+  border-radius: 12px !important;
+}
+
+.badge.bg-danger {
+  background-color: var(--admin-danger) !important;
+  border-radius: 12px !important;
+}
+
+/* Form controls focus */
+.form-control {
+  border: 1px solid var(--admin-border) !important;
+  border-radius: 6px !important;
+  transition: all 0.3s ease !important;
+}
+
+.form-control:focus {
+  border-color: var(--admin-primary) !important;
+  box-shadow: 0 0 0 3px rgba(139, 195, 74, 0.1) !important;
+  background-color: var(--admin-background) !important;
+}
+
+/* Pagination */
+.page-link {
+  color: var(--admin-primary) !important;
+  border: 1px solid var(--admin-border) !important;
+  border-radius: 6px !important;
+  margin: 0 2px !important;
+  transition: all 0.3s ease !important;
+}
+
+.page-item.active .page-link {
+  background-color: var(--admin-primary) !important;
+  border-color: var(--admin-primary) !important;
+  color: white !important;
+}
+
+.page-link:hover {
+  color: var(--admin-primary-dark) !important;
+  background-color: var(--admin-primary-very-light) !important;
+  border-color: var(--admin-primary) !important;
+}
+
+/* Toggle button */
+.app-sidebar__toggle {
+  color: white !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-radius: 6px !important;
+  transition: all 0.3s ease !important;
+}
+
+.app-sidebar__toggle:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* App title */
+.app-title h1 {
+  color: var(--admin-text-primary) !important;
+  font-weight: 600 !important;
+}
+
+/* Tile styling */
+.tile {
+  background: var(--admin-background) !important;
+  border-radius: 8px !important;
+  border: 1px solid var(--admin-border) !important;
+  transition: all 0.3s ease !important;
+}
+
+.tile:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+.tile .tile-title {
+  color: var(--admin-text-primary) !important;
+  font-weight: 600 !important;
+  border-bottom: 2px solid var(--admin-primary-very-light) !important;
+  padding-bottom: 10px !important;
+}
+
+/* Chart colors */
+.chart-container canvas {
+  border-radius: 8px !important;
+  background: var(--admin-background) !important;
+}
+
+/* Dropdown menus */
+.dropdown-menu {
+  background: var(--admin-background) !important;
+  border: 1px solid var(--admin-border) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+.dropdown-item:hover {
+  background-color: var(--admin-primary-very-light) !important;
+  color: var(--admin-primary) !important;
+}
+
+.dropdown-item.active {
+  background-color: var(--admin-primary) !important;
+  color: white !important;
+}
+
+/* Alert styling */
+.alert-primary {
+  background-color: var(--admin-primary-very-light) !important;
+  border: 1px solid var(--admin-primary-light) !important;
+  color: var(--admin-primary-dark) !important;
+  border-radius: 8px !important;
+}
+
+/* Modal headers */
+.modal-header {
+  background-color: var(--admin-primary) !important;
+  color: white !important;
+  border-radius: 8px 8px 0 0 !important;
+}
+
+.modal-header .close {
+  color: white !important;
+  opacity: 0.8 !important;
+  transition: opacity 0.3s ease !important;
+}
+
+.modal-header .close:hover {
+  opacity: 1 !important;
+}
+
+/* Progress bars */
+.progress-bar {
+  background-color: var(--admin-primary) !important;
+  border-radius: 4px !important;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar-thumb {
+  background-color: var(--admin-primary) !important;
+  border-radius: 10px !important;
+}
+
+::-webkit-scrollbar-track {
+  background-color: var(--admin-background-light) !important;
+  border-radius: 10px !important;
+}
+
+/* Sidebar user info */
+.app-sidebar__user-name {
+  color: white !important;
+  font-weight: 600 !important;
+}
+
+.app-sidebar__user-designation {
+  color: rgba(255, 255, 255, 0.8) !important;
+  font-size: 12px !important;
+}
+
+/* Treeview menu */
+.treeview-item.active,
+.treeview-item:hover,
+.treeview-item:focus {
+  background-color: var(--admin-primary) !important;
+  color: white !important;
+  border-radius: 6px !important;
+}
+
+/* Search input */
+.app-search__input:focus {
+  border-color: var(--admin-primary) !important;
+  box-shadow: 0 0 0 3px rgba(139, 195, 74, 0.1) !important;
+}
+
+/* Notification badges */
+.badge {
+  background-color: var(--admin-primary) !important;
+  border-radius: 12px !important;
+  font-weight: 500 !important;
+}
+
+/* Custom focus states */
+.btn:focus,
+.form-control:focus,
+.page-link:focus {
+  box-shadow: 0 0 0 3px rgba(139, 195, 74, 0.1) !important;
+}
+
+/* Custom button styles */
+.btn-add {
+  background-color: var(--admin-primary) !important;
+  border-color: var(--admin-primary) !important;
+  color: white !important;
+  border-radius: 6px !important;
+  transition: all 0.3s ease !important;
+}
+
+.btn-add:hover {
+  background-color: var(--admin-primary-dark) !important;
+  border-color: var(--admin-primary-dark) !important;
+}
+
+/* Table action buttons */
+.btn-sm {
+  border-radius: 6px !important;
+  transition: all 0.3s ease !important;
+}
+
+/* Custom styling for data tables */
+.dataTables_wrapper .dataTables_paginate .paginate_button.current {
+  background-color: var(--admin-primary) !important;
+  border-color: var(--admin-primary) !important;
+  color: white !important;
+  border-radius: 6px !important;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+  background-color: var(--admin-primary-dark) !important;
+  border-color: var(--admin-primary-dark) !important;
+  color: white !important;
+}
+
+/* SweetAlert customization */
+.swal-button--confirm {
+  background-color: var(--admin-primary) !important;
+  border-radius: 6px !important;
+}
+
+.swal-button--confirm:hover {
+  background-color: var(--admin-primary-dark) !important;
+}
+
+/* Custom animations */
+@keyframes fadeInGreen {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tile {
+  animation: fadeInGreen 0.3s ease-in-out;
+}
+
+/* Main content background */
+.app-content {
+  background: var(--admin-background-light) !important;
+}
+
+/* Body background */
+body {
+  background: var(--admin-background-light) !important;
+  color: var(--admin-text-primary) !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .app-sidebar {
+    background: var(--admin-background) !important;
+  }
+  
+  .app-menu__item.active,
+  .app-menu__item:hover,
+  .app-menu__item:focus {
+    background-color: var(--admin-primary) !important;
+  }
+  
+  .widget-small {
+    margin-bottom: 15px !important;
+  }
+}
+
+/* Additional styling for better visual hierarchy */
+.app-title {
+  background: var(--admin-background) !important;
+  border-radius: 8px !important;
+  padding: 15px 20px !important;
+  margin-bottom: 20px !important;
+  border: 1px solid var(--admin-border) !important;
+}
+
+/* Form groups */
+.form-group {
+  margin-bottom: 20px !important;
+}
+
+.form-group label {
+  color: var(--admin-text-primary) !important;
+  font-weight: 500 !important;
+  margin-bottom: 8px !important;
+}
+
+/* Card styling */
+.card {
+  background: var(--admin-background) !important;
+  border: 1px solid var(--admin-border) !important;
+  border-radius: 8px !important;
+}
+
+/* Text colors */
+.text-primary {
+  color: var(--admin-primary) !important;
+}
+
+.text-muted {
+  color: var(--admin-text-secondary) !important;
+} 
