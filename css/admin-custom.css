@@ -1,4 +1,4 @@
-/* CSS tùy chỉnh cho trang admin - Sử dụng chính xác màu từ trang home */
+/* CSS đơn giản cho trang admin - Không gradient, không hiệu ứng, không shadow phức tạp */
 
 :root {
   --admin-primary: #8BC34A; /* Màu chính từ trang home */
@@ -18,6 +18,11 @@
   --admin-background-light: #f5f5f5; /* Màu nền nhạt từ trang home */
 }
 
+body {
+  background: var(--admin-background-light) !important;
+  color: var(--admin-text-primary) !important;
+}
+
 /* Header và Navigation */
 .app-header {
   background-color: var(--admin-primary) !important;
@@ -25,76 +30,110 @@
 }
 
 .app-sidebar {
-  background-color: var(--admin-background) !important;
-  border-right: 1px solid var(--admin-border) !important;
+  background-color: var(--admin-primary) !important;
+}
+.app-sidebar, .app-sidebar * {
+  color: #fff !important;
 }
 
 .app-sidebar__user {
   background-color: var(--admin-primary) !important;
   border-radius: 8px !important;
   margin: 10px !important;
-  padding: 15px !important;
+  padding: 30px 15px 15px 15px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  box-shadow: none !important;
+}
+
+.app-sidebar__user img {
+  display: block;
+  margin: 0 auto 10px auto;
+}
+
+.app-sidebar__user-name,
+.app-sidebar__user-designation {
+  text-align: center !important;
+  width: 100%;
+}
+
+.app-sidebar__user-name {
+  color: white !important;
+  font-weight: 600 !important;
+  font-size: 16px !important;
+  margin-bottom: 5px !important;
+}
+
+.app-sidebar__user-designation {
+  color: rgba(255, 255, 255, 0.9) !important;
+  font-size: 13px !important;
+  font-weight: 400 !important;
+}
+
+.app-menu__item {
+  border-radius: 8px !important;
+  margin: 5px 0 !important;
+  padding: 12px 15px !important;
+  font-weight: 500 !important;
+  font-size: 14px !important;
+  background: transparent !important;
+  color: white !important;
+  border: none !important;
+  transition: background 0.3s ease, color 0.3s ease !important;
 }
 
 .app-menu__item.active, 
 .app-menu__item:hover, 
 .app-menu__item:focus {
-  background-color: var(--admin-primary) !important;
-  color: white !important;
-  border-radius: 8px !important;
-  margin: 2px 8px !important;
-  transition: all 0.3s ease !important;
+  background-color: var(--admin-primary-dark) !important;
+  color: #fff !important;
 }
 
 .app-menu__item.active .app-menu__icon,
 .app-menu__item:hover .app-menu__icon,
 .app-menu__item:focus .app-menu__icon {
-  color: white !important;
+  color: #fff !important;
 }
 
 .app-menu__item.active .app-menu__label,
 .app-menu__item:hover .app-menu__label,
 .app-menu__item:focus .app-menu__label {
-  color: white !important;
+  color: #fff !important;
 }
 
-/* Buttons */
-.btn-primary {
-  background-color: var(--admin-primary) !important;
-  border-color: var(--admin-primary) !important;
-  border-radius: 6px !important;
-  transition: all 0.3s ease !important;
+.app-menu__icon {
+  font-size: 18px !important;
+  margin-right: 12px !important;
 }
 
-.btn-primary:hover,
-.btn-primary:focus,
-.btn-primary:active {
-  background-color: var(--admin-primary-dark) !important;
-  border-color: var(--admin-primary-dark) !important;
+.app-content {
+  background: var(--admin-background-light) !important;
+  padding: 30px !important;
+  min-height: calc(100vh - 60px) !important;
 }
 
-.btn-success {
-  background-color: var(--admin-success) !important;
-  border-color: var(--admin-success) !important;
-  border-radius: 6px !important;
+.app-title {
+  background: var(--admin-background) !important;
+  border-radius: 8px !important;
+  padding: 15px 20px !important;
+  margin-bottom: 20px !important;
+  border: 1px solid var(--admin-border) !important;
 }
 
-.btn-info {
-  background-color: var(--admin-info) !important;
-  border-color: var(--admin-info) !important;
-  border-radius: 6px !important;
+.app-title h1 {
+  color: var(--admin-text-primary) !important;
+  font-weight: 600 !important;
 }
 
-.btn-warning {
-  background-color: var(--admin-warning) !important;
-  border-color: var(--admin-warning) !important;
-  border-radius: 6px !important;
+.app-breadcrumb .breadcrumb-item a {
+  color: var(--admin-primary) !important;
 }
 
-.btn-danger {
-  background-color: var(--admin-danger) !important;
-  border-color: var(--admin-danger) !important;
-  border-radius: 6px !important;
+.app-breadcrumb .breadcrumb-item.active {
+  color: var(--admin-text-secondary) !important;
 }
 
 /* Widget cards */
@@ -102,11 +141,39 @@
   background: var(--admin-background) !important;
   border-radius: 8px !important;
   border: 1px solid var(--admin-border) !important;
-  transition: all 0.3s ease !important;
+  padding: 15px !important;
+  margin-bottom: 15px !important;
 }
 
-.widget-small:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+/* Thay đổi layout thành 4 ô trên 1 hàng */
+.col-md-6.col-lg-3 {
+  flex: 0 0 25% !important;
+  max-width: 25% !important;
+}
+
+/* Giảm font size cho widget */
+.widget-small .info h4 {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: var(--admin-text-secondary) !important;
+  margin-bottom: 5px !important;
+  text-transform: uppercase !important;
+}
+
+.widget-small .info p {
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  color: var(--admin-text-primary) !important;
+  margin: 0 !important;
+}
+
+.widget-small .icon {
+  font-size: 24px !important;
+  width: 40px !important;
+  height: 40px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 .widget-small.primary.coloured-icon .icon {
@@ -129,27 +196,79 @@
   border-radius: 50% !important;
 }
 
-/* Links */
-a {
-  color: var(--admin-primary) !important;
-  transition: color 0.3s ease !important;
+
+
+/* Buttons */
+.btn {
+  border-radius: 6px !important;
+  font-weight: 500 !important;
+  font-size: 14px !important;
+  padding: 10px 20px !important;
+  border: none !important;
+  background: #e0e0e0 !important;
+  color: #333 !important;
+  transition: background 0.3s ease !important;
 }
 
-a:hover {
-  color: var(--admin-primary-dark) !important;
-  text-decoration: none !important;
+.btn-primary {
+  background-color: var(--admin-primary) !important;
+  color: white !important;
 }
 
-/* Breadcrumb */
-.app-breadcrumb .breadcrumb-item a {
-  color: var(--admin-primary) !important;
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:active {
+  background-color: var(--admin-primary-dark) !important;
 }
 
-.app-breadcrumb .breadcrumb-item.active {
-  color: var(--admin-text-secondary) !important;
+.btn-success {
+  background-color: var(--admin-success) !important;
+  color: white !important;
+}
+
+.btn-info {
+  background-color: var(--admin-info) !important;
+  color: white !important;
+}
+
+.btn-warning {
+  background-color: var(--admin-warning) !important;
+  color: white !important;
+}
+
+.btn-danger {
+  background-color: var(--admin-danger) !important;
+  color: white !important;
+}
+
+.btn-sm {
+  padding: 6px 12px !important;
+  font-size: 12px !important;
+}
+
+.btn-lg {
+  padding: 14px 28px !important;
+  font-size: 16px !important;
 }
 
 /* Table styling */
+.tile {
+  background: var(--admin-background) !important;
+  border-radius: 8px !important;
+  border: 1px solid var(--admin-border) !important;
+}
+
+.tile .tile-title {
+  color: var(--admin-text-primary) !important;
+  font-weight: 600 !important;
+  border-bottom: 2px solid var(--admin-primary-very-light) !important;
+  padding-bottom: 10px !important;
+}
+
+.tile-body {
+  padding: 20px !important;
+}
+
 .table {
   background: var(--admin-background) !important;
   border-radius: 8px !important;
@@ -159,7 +278,6 @@ a:hover {
 
 .table-hover tbody tr:hover {
   background-color: var(--admin-primary-very-light) !important;
-  transition: background-color 0.3s ease !important;
 }
 
 .table thead th {
@@ -169,55 +287,87 @@ a:hover {
   font-weight: 600 !important;
   text-transform: uppercase !important;
   font-size: 12px !important;
-  letter-spacing: 0.5px !important;
 }
 
-/* Badge colors */
+.table tbody td {
+  padding: 12px !important;
+  border-bottom: 1px solid var(--admin-border) !important;
+  vertical-align: middle !important;
+}
+
+/* Badge styling */
+.badge {
+  border-radius: 8px !important;
+  font-weight: 500 !important;
+  font-size: 11px !important;
+  padding: 6px 12px !important;
+  text-transform: uppercase !important;
+}
+
 .badge.bg-primary {
   background-color: var(--admin-primary) !important;
-  border-radius: 12px !important;
+  color: white !important;
 }
 
 .badge.bg-success {
   background-color: var(--admin-success) !important;
-  border-radius: 12px !important;
+  color: white !important;
 }
 
 .badge.bg-info {
   background-color: var(--admin-info) !important;
-  border-radius: 12px !important;
+  color: white !important;
 }
 
 .badge.bg-warning {
   background-color: var(--admin-warning) !important;
-  border-radius: 12px !important;
+  color: white !important;
 }
 
 .badge.bg-danger {
   background-color: var(--admin-danger) !important;
-  border-radius: 12px !important;
+  color: white !important;
 }
 
-/* Form controls focus */
+/* Form controls */
 .form-control {
   border: 1px solid var(--admin-border) !important;
   border-radius: 6px !important;
-  transition: all 0.3s ease !important;
+  padding: 10px 14px !important;
+  font-size: 14px !important;
+  background-color: var(--admin-background) !important;
+  transition: border 0.3s ease !important;
 }
 
 .form-control:focus {
   border-color: var(--admin-primary) !important;
-  box-shadow: 0 0 0 3px rgba(139, 195, 74, 0.1) !important;
   background-color: var(--admin-background) !important;
 }
 
+.form-group {
+  margin-bottom: 20px !important;
+}
+
+.form-group label {
+  color: var(--admin-text-primary) !important;
+  font-weight: 500 !important;
+  margin-bottom: 8px !important;
+  font-size: 14px !important;
+}
+
 /* Pagination */
+.pagination {
+  margin: 20px 0 0 0 !important;
+}
+
 .page-link {
   color: var(--admin-primary) !important;
   border: 1px solid var(--admin-border) !important;
   border-radius: 6px !important;
   margin: 0 2px !important;
-  transition: all 0.3s ease !important;
+  padding: 8px 14px !important;
+  font-weight: 500 !important;
+  transition: background 0.3s ease !important;
 }
 
 .page-item.active .page-link {
@@ -232,73 +382,28 @@ a:hover {
   border-color: var(--admin-primary) !important;
 }
 
+/* Links */
+a {
+  color: var(--admin-primary) !important;
+  transition: color 0.3s ease !important;
+  text-decoration: none !important;
+}
+
+a:hover {
+  color: var(--admin-primary-dark) !important;
+  text-decoration: none !important;
+}
+
 /* Toggle button */
 .app-sidebar__toggle {
   color: white !important;
   background: rgba(255, 255, 255, 0.1) !important;
   border-radius: 6px !important;
-  transition: all 0.3s ease !important;
+  transition: background 0.3s ease !important;
 }
 
 .app-sidebar__toggle:hover {
   background: rgba(255, 255, 255, 0.2) !important;
-}
-
-/* App title */
-.app-title h1 {
-  color: var(--admin-text-primary) !important;
-  font-weight: 600 !important;
-}
-
-/* Tile styling */
-.tile {
-  background: var(--admin-background) !important;
-  border-radius: 8px !important;
-  border: 1px solid var(--admin-border) !important;
-  transition: all 0.3s ease !important;
-}
-
-.tile:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
-}
-
-.tile .tile-title {
-  color: var(--admin-text-primary) !important;
-  font-weight: 600 !important;
-  border-bottom: 2px solid var(--admin-primary-very-light) !important;
-  padding-bottom: 10px !important;
-}
-
-/* Chart colors */
-.chart-container canvas {
-  border-radius: 8px !important;
-  background: var(--admin-background) !important;
-}
-
-/* Dropdown menus */
-.dropdown-menu {
-  background: var(--admin-background) !important;
-  border: 1px solid var(--admin-border) !important;
-  border-radius: 8px !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
-}
-
-.dropdown-item:hover {
-  background-color: var(--admin-primary-very-light) !important;
-  color: var(--admin-primary) !important;
-}
-
-.dropdown-item.active {
-  background-color: var(--admin-primary) !important;
-  color: white !important;
-}
-
-/* Alert styling */
-.alert-primary {
-  background-color: var(--admin-primary-very-light) !important;
-  border: 1px solid var(--admin-primary-light) !important;
-  color: var(--admin-primary-dark) !important;
-  border-radius: 8px !important;
 }
 
 /* Modal headers */
@@ -316,6 +421,14 @@ a:hover {
 
 .modal-header .close:hover {
   opacity: 1 !important;
+}
+
+/* Alert styling */
+.alert-primary {
+  background-color: var(--admin-primary-very-light) !important;
+  border: 1px solid var(--admin-primary-light) !important;
+  color: var(--admin-primary-dark) !important;
+  border-radius: 8px !important;
 }
 
 /* Progress bars */
@@ -358,13 +471,12 @@ a:hover {
 /* Search input */
 .app-search__input:focus {
   border-color: var(--admin-primary) !important;
-  box-shadow: 0 0 0 3px rgba(139, 195, 74, 0.1) !important;
 }
 
 /* Notification badges */
 .badge {
   background-color: var(--admin-primary) !important;
-  border-radius: 12px !important;
+  border-radius: 8px !important;
   font-weight: 500 !important;
 }
 
@@ -372,7 +484,7 @@ a:hover {
 .btn:focus,
 .form-control:focus,
 .page-link:focus {
-  box-shadow: 0 0 0 3px rgba(139, 195, 74, 0.1) !important;
+  outline: none !important;
 }
 
 /* Custom button styles */
@@ -381,7 +493,7 @@ a:hover {
   border-color: var(--admin-primary) !important;
   color: white !important;
   border-radius: 6px !important;
-  transition: all 0.3s ease !important;
+  transition: background 0.3s ease !important;
 }
 
 .btn-add:hover {
@@ -392,7 +504,7 @@ a:hover {
 /* Table action buttons */
 .btn-sm {
   border-radius: 6px !important;
-  transition: all 0.3s ease !important;
+  transition: background 0.3s ease !important;
 }
 
 /* Custom styling for data tables */
@@ -419,31 +531,9 @@ a:hover {
   background-color: var(--admin-primary-dark) !important;
 }
 
-/* Custom animations */
-@keyframes fadeInGreen {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.tile {
-  animation: fadeInGreen 0.3s ease-in-out;
-}
-
 /* Main content background */
 .app-content {
   background: var(--admin-background-light) !important;
-}
-
-/* Body background */
-body {
-  background: var(--admin-background-light) !important;
-  color: var(--admin-text-primary) !important;
 }
 
 /* Responsive adjustments */
@@ -451,36 +541,23 @@ body {
   .app-sidebar {
     background: var(--admin-background) !important;
   }
-  
-  .app-menu__item.active,
-  .app-menu__item:hover,
-  .app-menu__item:focus {
-    background-color: var(--admin-primary) !important;
-  }
-  
   .widget-small {
     margin-bottom: 15px !important;
   }
+  
+  /* Responsive cho widget - 2 ô trên 1 hàng trên mobile */
+  .col-md-6.col-lg-3 {
+    flex: 0 0 50% !important;
+    max-width: 50% !important;
+  }
 }
 
-/* Additional styling for better visual hierarchy */
-.app-title {
-  background: var(--admin-background) !important;
-  border-radius: 8px !important;
-  padding: 15px 20px !important;
-  margin-bottom: 20px !important;
-  border: 1px solid var(--admin-border) !important;
-}
-
-/* Form groups */
-.form-group {
-  margin-bottom: 20px !important;
-}
-
-.form-group label {
-  color: var(--admin-text-primary) !important;
-  font-weight: 500 !important;
-  margin-bottom: 8px !important;
+@media (max-width: 576px) {
+  /* Responsive cho widget - 1 ô trên 1 hàng trên mobile nhỏ */
+  .col-md-6.col-lg-3 {
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+  }
 }
 
 /* Card styling */
@@ -490,7 +567,6 @@ body {
   border-radius: 8px !important;
 }
 
-/* Text colors */
 .text-primary {
   color: var(--admin-primary) !important;
 }
@@ -498,3 +574,21 @@ body {
 .text-muted {
   color: var(--admin-text-secondary) !important;
 } 
+
+.form-control-sm {
+  min-width: 90px !important;
+  padding-left: 12px !important;
+  padding-right: 28px !important;
+  font-size: 16px !important;
+  height: 38px !important;
+} 
+
+#sampleTable th:nth-child(1) { width: 10px !important; }
+#sampleTable th:nth-child(2) { width: 120px !important; }
+#sampleTable th:nth-child(3) { width: 120px !important; }
+#sampleTable th:nth-child(4) { width: 200px !important; }
+#sampleTable th:nth-child(5) { width: 100px !important; }
+#sampleTable th:nth-child(6) { width: 100px !important; }
+#sampleTable th:nth-child(7) { width: 90px !important; }
+#sampleTable th:nth-child(8) { width: 120px !important; }
+#sampleTable th { min-width: 60px; } 

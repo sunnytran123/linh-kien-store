@@ -186,7 +186,7 @@ $result = $conn->query($sql);
               id="sampleTable">
               <thead>
                 <tr>
-                  <th width="10"></th>
+                  <th width="10"><input type="checkbox" id="selectAll"></th>
                   <th>ID khách hàng</th>
                   <th width="150">Họ và tên</th>
                   <th width="300">Email</th>
@@ -300,6 +300,27 @@ $result = $conn->query($sql);
   <script type="text/javascript" src="js/plugins/dataTables.bootstrap.min.js"></script>
   <script type="text/javascript">$('#sampleTable').DataTable();</script>
   <script>
+// Xử lý Select All
+$(document).ready(function() {
+    // Xử lý checkbox Select All
+    $('#selectAll').change(function() {
+        var isChecked = $(this).is(':checked');
+        $('input[name^="check"]').prop('checked', isChecked);
+    });
+    
+    // Xử lý khi checkbox riêng lẻ thay đổi
+    $(document).on('change', 'input[name^="check"]', function() {
+        var totalCheckboxes = $('input[name^="check"]').length;
+        var checkedCheckboxes = $('input[name^="check"]:checked').length;
+        
+        if (checkedCheckboxes === totalCheckboxes) {
+            $('#selectAll').prop('checked', true);
+        } else {
+            $('#selectAll').prop('checked', false);
+        }
+    });
+});
+
 // Xử lý xóa người dùng
 function deleteStaff(id) {
     swal({

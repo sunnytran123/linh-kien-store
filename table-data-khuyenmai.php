@@ -162,14 +162,13 @@ $result_sanpham = $conn->query($sql_sanpham);
                         <table class="table table-hover table-bordered" id="sampleTable">
                             <thead>
                                 <tr>
-                                    <th class="text-center"></th>
-                                    <th class="text-center">ID</th>
+                                    <th class="text-center"><input type="checkbox" id="selectAll"></th>
                                     <th class="text-center">Tên khuyến mãi</th>
                                     <th class="text-center">Giá trị</th>
                                     <th class="text-center">Ngày bắt đầu</th>
                                     <th class="text-center">Ngày kết thúc</th>
-                                    <th class="text-center">Số sản phẩm áp dụng</th>
-                                    <th class="text-center">Sản phẩm áp dụng</th>
+                                    <th class="text-center">SL áp dụng</th>
+                                    <th class="text-center">Sản phẩm</th>
                                     <th class="text-center">Trạng thái</th>
                                     <th class="text-center">Tính năng</th>
                                 </tr>
@@ -192,7 +191,6 @@ $result_sanpham = $conn->query($sql_sanpham);
                                         ?>
                                         <tr>
                                             <td width="10"><input type="checkbox" name="check1" value="1"></td>
-                                            <td><?php echo $row['khuyenmaiid']; ?></td>
                                             <td><?php echo $row['tenkhuyenmai']; ?></td>
                                             <td><?php echo number_format($row['giatri'], 0, ',', '.'); ?> VNĐ</td>
                                             <td><?php echo date('d/m/Y H:i', strtotime($row['ngaybatdau'])); ?></td>
@@ -288,6 +286,27 @@ $result_sanpham = $conn->query($sql_sanpham);
     
     <script>
         $('#sampleTable').DataTable();
+
+        // Xử lý Select All
+        $(document).ready(function() {
+            // Xử lý checkbox Select All
+            $('#selectAll').change(function() {
+                var isChecked = $(this).is(':checked');
+                $('input[name^="check"]').prop('checked', isChecked);
+            });
+            
+            // Xử lý khi checkbox riêng lẻ thay đổi
+            $(document).on('change', 'input[name^="check"]', function() {
+                var totalCheckboxes = $('input[name^="check"]').length;
+                var checkedCheckboxes = $('input[name^="check"]:checked').length;
+                
+                if (checkedCheckboxes === totalCheckboxes) {
+                    $('#selectAll').prop('checked', true);
+                } else {
+                    $('#selectAll').prop('checked', false);
+                }
+            });
+        });
 
         function deleteKhuyenMai(khuyenmaiid) {
             swal({

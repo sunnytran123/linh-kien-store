@@ -1,7 +1,7 @@
 # Cập Nhật Phong Cách Trang Admin - Màu Chính Xác Từ Trang Home
 
 ## Tổng Quan
-Đã cập nhật phong cách của tất cả các trang admin với màu sắc chính xác từ trang home, sử dụng màu chủ đạo `#8BC34A` (xanh lá) và các màu phụ tương ứng, loại bỏ gradient và hiệu ứng phức tạp.
+Đã cập nhật phong cách của tất cả các trang admin với màu sắc chính xác từ trang home, sử dụng màu chủ đạo `#8BC34A` (xanh lá) và các màu phụ tương ứng, với thiết kế đơn giản và sạch sẽ.
 
 ## Những Thay Đổi Đã Thực Hiện
 
@@ -25,7 +25,7 @@
 ### 3. Các Thành Phần Được Cập Nhật
 
 #### Header và Navigation
-- Header: Background xanh lá đơn giản (không gradient)
+- Header: Background xanh lá đơn giản
 - Sidebar: Background trắng với viền xám nhạt
 - User section: Background xanh lá đơn giản
 - Menu items: Background xanh lá đơn giản khi hover/active
@@ -111,7 +111,7 @@ Chỉnh sửa các biến CSS trong file `css/admin-custom.css`:
 - Các thay đổi không ảnh hưởng đến chức năng, chỉ thay đổi giao diện
 - Sử dụng CSS variables để dễ dàng tùy chỉnh màu sắc
 - Màu sắc chính xác từ trang home để tạo trải nghiệm nhất quán
-- Loại bỏ gradient và hiệu ứng phức tạp để giữ đơn giản như trang home
+- Thiết kế đơn giản và sạch sẽ, không có gradient hay hiệu ứng phức tạp
 
 ## Kết Quả
 - **Giao diện thống nhất**: Sử dụng màu chính xác từ trang home

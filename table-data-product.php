@@ -202,7 +202,7 @@ $result_danhmuc = $conn->query($sql_danhmuc);
                           <table class="table table-hover table-bordered" id="sampleTable">
                               <thead>
                                   <tr>
-                                      <th width="10"></th>
+                                      <th width="10"><input type="checkbox" id="selectAll"></th>
                                       <th class="text-center">Mã sản phẩm</th>
                                       <th>Tên sản phẩm</th>
                                       <th>Ảnh</th>
@@ -334,6 +334,28 @@ MODAL
     <script type="text/javascript" src="js/plugins/dataTables.bootstrap.min.js"></script>
     <script type="text/javascript">
         $('#sampleTable').DataTable();
+        
+        // Xử lý Select All
+        $(document).ready(function() {
+            // Xử lý checkbox Select All
+            $('#selectAll').change(function() {
+                var isChecked = $(this).is(':checked');
+                $('input[name^="check"]').prop('checked', isChecked);
+            });
+            
+            // Xử lý khi checkbox riêng lẻ thay đổi
+            $(document).on('change', 'input[name^="check"]', function() {
+                var totalCheckboxes = $('input[name^="check"]').length;
+                var checkedCheckboxes = $('input[name^="check"]:checked').length;
+                
+                if (checkedCheckboxes === totalCheckboxes) {
+                    $('#selectAll').prop('checked', true);
+                } else {
+                    $('#selectAll').prop('checked', false);
+                }
+            });
+        });
+        
         //Thời Gian
     function time() {
       var today = new Date();
