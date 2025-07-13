@@ -238,27 +238,28 @@ $result_sanpham = $conn->query($sql_sanpham);
                         </div>
                     </div>
                     <form id="addKhuyenMaiForm" method="POST">
+                        <input type="hidden" id="khuyenmaiid" name="khuyenmaiid">
                         <div class="row">
                             <div class="form-group col-md-12">
                                 <label class="control-label">Tên khuyến mãi</label>
-                                <input class="form-control" type="text" name="tenkhuyenmai" required>
+                                <input class="form-control" type="text" id="tenkhuyenmai" name="tenkhuyenmai" required>
                             </div>
                             <div class="form-group col-md-6">
                                 <label class="control-label">Giá trị giảm (VNĐ)</label>
-                                <input class="form-control" type="text" name="giatri" required
+                                <input class="form-control" type="text" id="giatri" name="giatri" required
                                        oninput="this.value = this.value.replace(/[^0-9]/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')">
                             </div>
                             <div class="form-group col-md-6">
                                 <label class="control-label">Ngày bắt đầu</label>
-                                <input class="form-control" type="datetime-local" name="ngaybatdau" required>
+                                <input class="form-control" type="datetime-local" id="ngaybatdau" name="ngaybatdau" required>
                             </div>
                             <div class="form-group col-md-6">
                                 <label class="control-label">Ngày kết thúc</label>
-                                <input class="form-control" type="datetime-local" name="ngayketthuc" required>
+                                <input class="form-control" type="datetime-local" id="ngayketthuc" name="ngayketthuc" required>
                             </div>
                             <div class="form-group col-md-12">
                                 <label class="control-label">Sản phẩm áp dụng</label>
-                                <select class="form-control" name="sanpham[]" multiple required>
+                                <select class="form-control" id="sanpham" name="sanpham[]" multiple required>
                                     <?php
                                     $sql_sp = "SELECT sanphamid, tensanpham FROM sanpham";
                                     $result_sp = $conn->query($sql_sp);
@@ -456,6 +457,15 @@ $result_sanpham = $conn->query($sql_sanpham);
                 }
             }, 'json');
         }
+
+        // Reset form khi nhấn Thêm mới
+        $(document).ready(function() {
+            $('.btn-add').on('click', function() {
+                $('#addKhuyenMaiForm')[0].reset();
+                $('#khuyenmaiid').val('');
+                $('#sanpham').val([]);
+            });
+        });
     </script>
 </body>
 </html> 
