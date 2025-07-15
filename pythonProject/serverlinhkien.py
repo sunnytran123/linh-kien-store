@@ -1,115 +1,98 @@
-# app.py
-import os
-import faiss
-import numpy as np
-import mysql.connector
 from flask import Flask, request, jsonify
-from flask_cors import CORS
-from docx import Document
-import pytesseract
-from pdf2image import convert_from_path
 from openai import OpenAI
-from datetime import datetime
+import mysql.connector
+import json
 
-# ========== CONFIG ==========
-# client = OpenAI(api_key=".")
 app = Flask(__name__)
-CORS(app)
-pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
-poppler_path = r"C:\poppler\bin"
 
-chunk_size, chunk_overlap = 300, 50
-index_path = r"C:\xampp\htdocs\shoplinhkien\pythonProject\faiss_index\index_all_in_one.index"
+# Khởi tạo client OpenAI
+client = OpenAI(api_key="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")
 
-# ========== FAISS ==========
-embedding_dim = 1536
-index = faiss.read_index(index_path) if os.path.exists(index_path) else faiss.IndexIDMap(faiss.IndexFlatL2(embedding_dim))
+# Định nghĩa các công cụ (tools) cho function calling
+tools = [
+    {
+        "type": "function",
+        "function": {
+            "name": "classify_user_request",
+            "description": "Phân loại yêu cầu của người dùng là tư vấn chung, tìm kiếm sản phẩm, hoặc yêu cầu thêm thông tin nếu không rõ ràng.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "request_type": {
+                        "type": "string",
+                        "enum": ["consultation", "product_search"],
+                        "description": "Loại yêu cầu: tư vấn chung, tìm kiếm sản phẩm, hoặc cần thêm thông tin."
+                    },
+                    "message": {
+                        "type": "string",
+                        "description": "Tin nhắn gốc của người dùng."
+                    },
+                    "additional_info_needed": {
+                        "type": "string",
+                        "description": "Thông tin bổ sung cần yêu cầu từ người dùng nếu request_type là need_more_info."
+                    }
+                },
+                "required": ["request_type", "message"],
+                "additionalProperties": False
+            }
+        }
+    }
+]
 
-# ========== MYSQL ==========
-conn = mysql.connector.connect(host="localhost", user="root", password="", database="shoplinhkien")
-cursor = conn.cursor()
 
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS documents (
-    id INT PRIMARY KEY,
-    content TEXT,
-    vector BLOB
-)
-""")
-conn.commit()
+def classify_user_request(query):
+    """Sử dụng function calling để phân loại yêu cầu người dùng"""
+    try:
+        prompt = f"""Câu yêu cầu của người dùng là: '{query}'
+        Bạn là bot hỗ trợ tư vấn mua sắm quần áo và linh kiện. Hãy phân tích yêu cầu của người dùng và xác định yêu cầu của họ.
 
-# ========== FUNCTIONS ==========
-def get_embedding(text):
-    response = client.embeddings.create(input=text, model="text-embedding-3-small")
-    return np.array(response.data[0].embedding, dtype=np.float32)
+        - Nếu người dùng hỏi về tư vấn chung (ví dụ: các danh mục sản phẩm, thông tin về shop), trả về request_type='consultation'.
+        - Nếu người dùng muốn tìm kiếm sản phẩm (ví dụ: tìm váy nữ, giá dưới 500k, tìm kiếm quần áo màu đỏ), trả về request_type='product_search'.
 
-def save_chunk_to_db(idx, chunk, vector):
-    vector_blob = vector.tobytes()
-    cursor.execute("INSERT INTO documents (id, content, vector) VALUES (%s, %s, %s)", (idx, chunk, vector_blob))
+        Trả về kết quả phân loại theo định dạng JSON của công cụ classify_user_request."""
 
-def ocr_pdf(path):
-    images = convert_from_path(path, poppler_path=poppler_path)
-    return "\n".join(pytesseract.image_to_string(img, lang="vie") for img in images)
+        response = client.chat.completions.create(
+            model="gpt-4o-mini-2024-07-18",
+            messages=[
+                {"role": "system",
+                 "content": "Bạn là một trợ lý phân loại yêu cầu người dùng chính xác và chuyên nghiệp."},
+                {"role": "user", "content": prompt}
+            ],
+            tools=tools,
+            tool_choice={"type": "function", "function": {"name": "classify_user_request"}},
+            temperature=0.5
+        )
 
-# ========== API ==========
-@app.route("/add_file", methods=["POST"])
-def add_file():
-    data = request.get_json()
-    filepath = data.get("path")
+        tool_call = response.choices[0].message.tool_calls[0]
+        arguments = json.loads(tool_call.function.arguments)
+        return arguments
+    except Exception as e:
+        print(f"Lỗi phân loại yêu cầu: {e}")
+        return {
+            "request_type": "need_more_info",
+            "message": query,
+            "additional_info_needed": "Xin lỗi, tôi chưa hiểu ý bạn! Bạn cần tìm kiếm thông tin về sản phẩm nào?"
+        }
 
-    if not filepath or not os.path.exists(filepath):
-        return jsonify({"message": "File không tồn tại."}), 400
 
-    if filepath.endswith(".pdf"):
-        text = ocr_pdf(filepath)
-    elif filepath.endswith(".docx"):
-        text = "\n".join(p.text for p in Document(filepath).paragraphs)
-    else:
-        return jsonify({"message": "Chỉ hỗ trợ PDF hoặc DOCX."}), 400
+@app.route('/api/chat', methods=['POST'])
+def chat():
+    try:
+        data = request.json
+        message_text = data.get("message", "").strip()
 
-    cursor.execute("SELECT MAX(id) FROM documents")
-    id_count = (cursor.fetchone()[0] or 0) + 1
+        if not message_text:
+            return jsonify({"status": "error", "message": "Vui lòng nhập tin nhắn"}), 400
 
-    for i in range(0, len(text), chunk_size - chunk_overlap):
-        chunk = text[i:i + chunk_size].strip()
-        if chunk:
-            vector = get_embedding(chunk)
-            index.add_with_ids(np.array([vector]), np.array([id_count]))
-            save_chunk_to_db(id_count, chunk, vector)
-            id_count += 1
+        # Phân loại yêu cầu
+        classification = classify_user_request(message_text)
+        print(classification)
 
-    faiss.write_index(index, index_path)
-    conn.commit()
-    return jsonify({"message": "Tải dữ liệu thành công."})
+        return jsonify({"status": "success", "response": classification}), 200
 
-@app.route("/ask", methods=["POST"])
-def ask():
-    data = request.get_json()
-    question = data.get("question")
-    if not question:
-        return jsonify({"answer": "Thiếu câu hỏi."}), 400
+    except Exception as e:
+        return jsonify({"status": "error", "message": "Đã xảy ra lỗi. Vui lòng thử lại."}), 500
 
-    question_vector = np.array([get_embedding(question)], dtype=np.float32)
-    _, ids = index.search(question_vector, 5)
-
-    context = ""
-    for idx in ids[0]:
-        if idx != -1:
-            cursor.execute("SELECT content FROM documents WHERE id=%s", (int(idx),))
-            row = cursor.fetchone()
-            if row:
-                context += row[0] + "\n"
-
-    if not context:
-        return jsonify({"answer": "Không tìm thấy thông tin phù hợp."})
-
-    prompt = f"Dựa trên thông tin sau, hãy trả lời câu hỏi:\n{context}\nCâu hỏi: {question}"
-    res = client.chat.completions.create(
-        model="gpt-4o-mini-2024-07-18",
-        messages=[{"role": "user", "content": prompt}]
-    )
-    answer = res.choices[0].message.content.strip()
-    return jsonify({"answer": answer})
 
 if __name__ == "__main__":
     app.run(debug=True)
