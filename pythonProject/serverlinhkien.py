@@ -147,7 +147,7 @@ def execute_query(query):
             host="localhost",
             user="root",
             password="",
-            database="shopdongho2"
+            database="shoplinhkien"
         )
         cursor = conn.cursor(dictionary=True)
         cursor.execute(query)
