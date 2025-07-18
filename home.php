@@ -188,8 +188,11 @@
         }
 
         .product-image {
-            height: 300px;
-            background: #f5f5f5;
+            width: 100%;
+            height: 200px; /* hoặc 300px, tuỳ bạn */
+            object-fit: contain;
+            background: #fff;
+            display: block;
         }
 
         .product-image img {

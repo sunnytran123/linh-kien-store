@@ -211,25 +211,24 @@ def generate_product_card(data, query):
         # CẤU TRÚC CÂU TRẢ LỜI
         Phần 1. Nếu tìm thấy sản phẩm, hãy tạo 1 câu dẫn phản hồi các yêu cầu của người dùng hoặc nếu không có thông tin thì trả lời là không có sản phẩm phù hợp.
         Phần 2. Đoạn mã HTML để hiển thị sản phẩm: 
+        - Mỗi sản phẩm là 1 <div class="product-card">.
+        - Trong mỗi product-card chỉ có ảnh, tên sản phẩm, giá (hoặc giá khuyến mãi nếu có).
+        - Khi nhấn vào toàn bộ thẻ product-card thì chuyển hướng đến ProductDetail.php?id=... (dùng thuộc tính onclick cho div).
+
         Ví dụ trả về:
         'Tìm thấy 2 sản phẩm phù hợp: <div class="product-list">
-            <div class="product-card">
-                <a href="ProductDetail.php?id=31">
-                    <img src="picture/1744571319_278381rbr-0006.jpg" class="product-image">
-                    <div class="product-name">Rolex Datejust 31 278381rbr-0006</div>
-                </a>
-                <button onclick="addToCart(31)" class="addtocart-btn">Thêm vào giỏ hàng</button>
+            <div class="product-card" onclick="window.location.href='ProductDetail.php?id=31'">
+                <img src="picture/1744571319_278381rbr-0006.jpg" class="product-image">
+                <div class="product-name">Mạch Thu Phát RF Lora SX1278 433Mhz Ra-02 - có ra chân</div>
+                <div class="product-price">đ89.500 - đ93.599</div>
             </div>
-            <div class="product-card">
-                <a href="ProductDetail.php?id=37">
-                    <img src="picture/1744573300_avr-3.jpg" class="product-image">
-                    <div class="product-name">Rolex Datejust Wimbledon</div>
-                </a>
-                <button onclick="addToCart(37)" class="addtocart-btn">Thêm vào giỏ hàng</button>
+            <div class="product-card" onclick="window.location.href='ProductDetail.php?id=37'">
+                <img src="picture/1744573300_avr-3.jpg" class="product-image">
+                <div class="product-name">Tên sản phẩm khác</div>
+                <div class="product-price">đ120.000</div>
             </div>
         </div>'
         """
-
         response = client.chat.completions.create(
             model="gpt-4o-mini-2024-07-18",
             messages=[
