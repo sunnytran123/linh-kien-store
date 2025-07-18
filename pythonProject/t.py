@@ -2,11 +2,8 @@ from flask import Flask, request, jsonify
 from openai import OpenAI
 import mysql.connector
 import json
-from flask_cors import CORS
-import traceback
 
 app = Flask(__name__)
-CORS(app)
 
 # Khởi tạo client OpenAI
 client = OpenAI(api_key="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")
@@ -112,21 +109,13 @@ def handle_product_search_query(query):
         # Tạo câu truy vấn SQL theo câu hỏi của người dùng
         prompt = f"""Bạn là một chuyên viên tư vấn bán quần áo túi nam và nữ. Khách hàng hỏi: {query}
 
-#Hãy tạo câu truy vấn MySQL tìm kiếm sản phẩm, luôn join với bảng hinhanhsanpham để lấy 1 ảnh đại diện (MIN(ha.duongdan) as duongdan) cho mỗi sản phẩm. Kết quả phải GROUP BY sp.sanphamid để mỗi sản phẩm chỉ xuất hiện 1 lần.
-    SELECT sp.*, MIN(ha.duongdan) as duongdan
-    FROM sanpham sp
-    LEFT JOIN hinhanhsanpham ha ON sp.sanphamid = ha.masanpham
-    WHERE ...
-    GROUP BY sp.sanphamid
-    LIMIT 5
-
-#Lưu ý: Luôn phải có trường duongdan trong kết quả.
-#Chú ý: không cần trả lời câu hỏi của khách hàng mà chỉ cần tạo ra câu truy vấn mysql select tìm kiếm các thông tin theo yêu cầu của khách hàng.
-#Lưu ý: 
-- Câu truy vấn cần giới hạn tối đa 5 kết quả.
-- Đảm bảo không có ký tự đặc biệt trong câu truy vấn.
-# Trả về câu truy vấn MySQL, không cần giải thích gì thêm.
-           Cơ sở dữ liệu `shopdongho2` bao gồm các bảng sau:
+            Bạn dựa vào câu hỏi của khách hàng để tạo ra câu truy vấn MySQL tìm kiếm các thông tin theo yêu cầu của khách hàng. 
+            #Chú ý: không cần trả lời câu hỏi của khách hàng mà chỉ cần tạo ra câu truy vấn mysql select tìm kiếm các thông tin theo yêu cầu của khách hàng.
+            #Lưu ý: 
+            - Câu truy vấn cần giới hạn tối đa 5 kết quả.
+            - Đảm bảo không có ký tự đặc biệt trong câu truy vấn.
+            # Trả về câu truy vấn MySQL, không cần giải thích gì thêm.
+            Cơ sở dữ liệu `shopdongho2` bao gồm các bảng sau:
 
         - *sanpham*: Sản phẩm quần áo túi của nam và nữ, gồm `sanphamid` (ID, khóa chính), `tensanpham` (tên sản phẩm), `mota` (mô tả sản phẩm), `gia` (giá bán), `madanhmuc` (liên kết với danh mục), `makhuyenmai` (liên kết với khuyến mãi), `chatlieu` (chất liệu), `thuonghieu` (thương hiệu), `baohanh` (bảo hành).
         - *khuyenmai*: Khuyến mãi, gồm `khuyenmaiid` (ID, khóa chính), `tenkhuyenmai` (tên khuyến mãi), `giatri` (giá trị giảm giá), `ngaybatdau` (ngày bắt đầu), `ngayketthuc` (ngày kết thúc).
@@ -134,7 +123,7 @@ def handle_product_search_query(query):
         - *mausac*: Màu sắc sản phẩm, gồm `mausacid` (ID, khóa chính), `tenmau` (tên màu), `mamau` (mã màu hex).
         - *size*: Kích cỡ sản phẩm, gồm `sizeid` (ID, khóa chính), `kichco` (kích cỡ sản phẩm).
 
-"""
+            """
 
         response = client.chat.completions.create(
             model="gpt-4o-mini-2024-07-18",
@@ -158,7 +147,7 @@ def execute_query(query):
             host="localhost",
             user="root",
             password="",
-            database="shoplinhkien"
+            database="shopdongho2"
         )
         cursor = conn.cursor(dictionary=True)
         cursor.execute(query)
@@ -214,15 +203,15 @@ def generate_product_card(data, query):
         Ví dụ trả về:
         'Tìm thấy 2 sản phẩm phù hợp: <div class="product-list">
             <div class="product-card">
-                <a href="ProductDetail.php?id=31">
-                    <img src="picture/1744571319_278381rbr-0006.jpg" class="product-image">
+                <a href="chi_tiet_san_pham.php?id=31">
+                    <img src="imageproduct/1744571319_278381rbr-0006.jpg" class="product-image">
                     <div class="product-name">Rolex Datejust 31 278381rbr-0006</div>
                 </a>
                 <button onclick="addToCart(31)" class="addtocart-btn">Thêm vào giỏ hàng</button>
             </div>
             <div class="product-card">
-                <a href="ProductDetail.php?id=37">
-                    <img src="picture/1744573300_avr-3.jpg" class="product-image">
+                <a href="chi_tiet_san_pham.php?id=37">
+                    <img src="imageproduct/1744573300_avr-3.jpg" class="product-image">
                     <div class="product-name">Rolex Datejust Wimbledon</div>
                 </a>
                 <button onclick="addToCart(37)" class="addtocart-btn">Thêm vào giỏ hàng</button>
@@ -277,12 +266,6 @@ def chat():
             print(f"Câu truy vấn cho tìm kiếm sản phẩm: {query}")
             data = execute_query(query)
             print(f"Dữ liệu tìm được: {data}")
-            # Sửa đường dẫn ảnh cho đúng thư mục picture/ và gán ảnh mặc định nếu thiếu
-            for item in data:
-                if 'duongdan' not in item or not item['duongdan']:
-                    item['duongdan'] = 'picture/no-image.png'
-                elif isinstance(item['duongdan'], str) and not item['duongdan'].startswith('picture/'):
-                    item['duongdan'] = f"picture/{item['duongdan']}"
             response = generate_product_card(data, message_text)
             print(f"Trả về thẻ sản phẩm: {response}")
             return jsonify({"status": "success", "response": response}), 200
@@ -292,10 +275,8 @@ def chat():
             return jsonify({"status": "success", "response": response_text}), 200
 
     except Exception as e:
-        import traceback
         print(f"Lỗi xử lý: {e}")
-        traceback.print_exc()
-        return jsonify({"status": "error", "message": f"Đã xảy ra lỗi: {e}"}), 500
+        return jsonify({"status": "error", "message": "Đã xảy ra lỗi. Vui lòng thử lại."}), 500
 
 
 if __name__ == "__main__":

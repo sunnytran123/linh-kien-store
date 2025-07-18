@@ -202,15 +202,4 @@
             <?php endif; ?>
         </div>        
     </header>
-    <script>
-        document.getElementById('openContactModal').onclick = function(e) {
-            e.preventDefault();
-            document.getElementById('contactModal').style.display = 'flex';
-        };
-        document.getElementById('closeContactModal').onclick = function() {
-            document.getElementById('contactModal').style.display = 'none';
-        };
-        document.getElementById('contactModal').onclick = function(e) {
-            if (e.target === this) this.style.display = 'none';
-        };
-    </script>
+    <?php include 'popupchatbot.php'; ?>
