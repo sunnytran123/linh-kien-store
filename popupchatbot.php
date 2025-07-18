@@ -128,6 +128,10 @@
 <script>
 function openChatBubble() {
     document.getElementById('chatBubbleBox').style.display = 'block';
+    // Nếu chưa có tin nhắn bot nào, hiển thị lời chào
+    if (!document.querySelector('#chatBubbleMessages .bot')) {
+        appendBubbleMsg('Chào bạn, tôi có thể giúp gì cho bạn?', 'bot');
+    }
 }
 document.getElementById('chatBubbleBtn').onclick = openChatBubble;
 document.getElementById('closeChatBubble').onclick = function(){document.getElementById('chatBubbleBox').style.display = 'none';};

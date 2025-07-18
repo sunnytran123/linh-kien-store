@@ -9,7 +9,7 @@ app = Flask(__name__)
 CORS(app)
 
 # Khởi tạo client OpenAI
-client = OpenAI(api_key="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")
+client = OpenAI(api_key="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")
 
 # Định nghĩa các công cụ (tools) cho function calling
 tools = [
@@ -111,7 +111,6 @@ def handle_product_search_query(query):
     try:
         # Tạo câu truy vấn SQL theo câu hỏi của người dùng
         prompt = f"""Bạn là một chuyên viên tư vấn bán quần áo túi nam và nữ. Khách hàng hỏi: {query}
-
 #Hãy tạo câu truy vấn MySQL tìm kiếm sản phẩm, luôn join với bảng hinhanhsanpham để lấy 1 ảnh đại diện (MIN(ha.duongdan) as duongdan) cho mỗi sản phẩm. Kết quả phải GROUP BY sp.sanphamid để mỗi sản phẩm chỉ xuất hiện 1 lần.
     SELECT sp.*, MIN(ha.duongdan) as duongdan
     FROM sanpham sp
@@ -119,14 +118,16 @@ def handle_product_search_query(query):
     WHERE ...
     GROUP BY sp.sanphamid
     LIMIT 5
-
+# #Khi người dùng hỏi về chất liệu, tên hoặc mô tả sản phẩm, hãy dùng điều kiện:
+# Ví dụ: # WHERE sp.chatlieu LIKE '%lụa%' AND (sp.tensanpham LIKE '%lụa%' OR sp.mota LIKE '%lụa%')
 #Lưu ý: Luôn phải có trường duongdan trong kết quả.
 #Chú ý: không cần trả lời câu hỏi của khách hàng mà chỉ cần tạo ra câu truy vấn mysql select tìm kiếm các thông tin theo yêu cầu của khách hàng.
 #Lưu ý: 
+- bỏ các ký tự đặt biệt
 - Câu truy vấn cần giới hạn tối đa 5 kết quả.
 - Đảm bảo không có ký tự đặc biệt trong câu truy vấn.
 # Trả về câu truy vấn MySQL, không cần giải thích gì thêm.
-           Cơ sở dữ liệu `shopdongho2` bao gồm các bảng sau:
+           Cơ sở dữ liệu `shoplinhkien` bao gồm các bảng sau:
 
         - *sanpham*: Sản phẩm quần áo túi của nam và nữ, gồm `sanphamid` (ID, khóa chính), `tensanpham` (tên sản phẩm), `mota` (mô tả sản phẩm), `gia` (giá bán), `madanhmuc` (liên kết với danh mục), `makhuyenmai` (liên kết với khuyến mãi), `chatlieu` (chất liệu), `thuonghieu` (thương hiệu), `baohanh` (bảo hành).
         - *khuyenmai*: Khuyến mãi, gồm `khuyenmaiid` (ID, khóa chính), `tenkhuyenmai` (tên khuyến mãi), `giatri` (giá trị giảm giá), `ngaybatdau` (ngày bắt đầu), `ngayketthuc` (ngày kết thúc).
