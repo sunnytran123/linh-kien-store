@@ -4,13 +4,15 @@ require_once 'connect.php';
 require_once 'functions.php';
 
 if (!isset($_SESSION['id'])) {
-    echo json_encode(['success' => false, 'message' => 'Vui lòng đăng nhập để mua hàng']);
+    echo json_encode(['redirect' => 'login.php']);
     exit;
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $productId = isset($_POST['product_id']) ? (int)$_POST['product_id'] : 0;
     $quantity = isset($_POST['quantity']) ? (int)$_POST['quantity'] : 0;
+    $sizeId = isset($_POST['sizeid']) ? (int)$_POST['sizeid'] : 0;
+    $colorId = isset($_POST['colorid']) ? (int)$_POST['colorid'] : 0;
     
     if ($productId <= 0 || $quantity <= 0) {
         echo json_encode(['success' => false, 'message' => 'Dữ liệu không hợp lệ']);
@@ -33,7 +35,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $_SESSION['buy_now'] = [
         'product_id' => $productId,
         'quantity' => $quantity,
-        'price' => $product['gia']
+        'price' => $product['gia'],
+        'sizeid' => $sizeId,
+        'colorid' => $colorId
     ];
     
     echo json_encode(['success' => true]);

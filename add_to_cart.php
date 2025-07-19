@@ -3,8 +3,8 @@ session_start();
 
 // Kiểm tra session
 if (!isset($_SESSION['id']) || !isset($_SESSION['loai'])) {
-    header("Location: login.php");
-    exit();
+    echo json_encode(['redirect' => 'login.php']);
+    exit;
 }
 include 'connect.php';
 

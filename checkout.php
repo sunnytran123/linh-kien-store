@@ -499,9 +499,9 @@ include 'header.php';
                     <img src="picture/<?php echo $product['duongdan']; ?>" alt="<?php echo $product['tensanpham']; ?>" style="width: 100px; height: 100px; object-fit: cover;">
                     <div class="product-info">
                         <h3><?php echo $product['tensanpham']; ?></h3>
+                        <?php if ($colorName): ?><p style="font-size: 16px;">Màu sắc: <?php echo htmlspecialchars($colorName); ?></p><?php endif; ?>
+                        <?php if ($sizeName): ?><p style="font-size: 16px;">Size: <?php echo htmlspecialchars($sizeName); ?></p><?php endif; ?>
                         <p style="font-size: 16px;">Số lượng: <?php echo $quantity; ?></p>
-                        <?php if ($colorName): ?><p style="padding-bottom: 10px; margin-bottom: 10px; font-size: 16px;">Màu sắc: <?php echo htmlspecialchars($colorName); ?></p><?php endif; ?>
-                        <?php if ($sizeName): ?><p style="padding-bottom: 10px; margin-bottom: 10px; font-size: 16px;">Size: <?php echo htmlspecialchars($sizeName); ?></p><?php endif; ?>
                         <p style="font-size: 16px;">Đơn giá: <?php echo number_format($price, 0, ',', '.'); ?> VNĐ</p>
                     </div>
                 </div>
@@ -536,9 +536,9 @@ include 'header.php';
                         <img src="picture/<?php echo $item['duongdan']; ?>" alt="<?php echo $item['tensanpham']; ?>" style="width: 100px; height: 100px; object-fit: cover;">
                         <div class="product-info" style="padding-bottom: 10px; margin-bottom: 10px;">
                             <h3 style="padding-bottom: 10px; margin-bottom: 10px;"><?php echo $item['tensanpham']; ?></h3>
-                            <p style="padding-bottom: 10px; margin-bottom: 10px; font-size: 16px;">Số lượng: <?php echo $item['soluong']; ?></p>
-                            <?php if ($colorName): ?><p style="padding-bottom: 10px; margin-bottom: 10px; font-size: 16px;">Màu sắc: <?php echo htmlspecialchars($colorName); ?></p><?php endif; ?>
-                            <?php if ($sizeName): ?><p style="padding-bottom: 10px; margin-bottom: 10px; font-size: 16px;">Size: <?php echo htmlspecialchars($sizeName); ?></p><?php endif; ?>
+                            <?php if ($colorName): ?><p style="font-size: 16px;">Màu sắc: <?php echo htmlspecialchars($colorName); ?></p><?php endif; ?>
+                            <?php if ($sizeName): ?><p style="font-size: 16px;">Size: <?php echo htmlspecialchars($sizeName); ?></p><?php endif; ?>
+                            <p style="font-size: 16px;">Số lượng: <?php echo $item['soluong']; ?></p>
                             <p style="font-size: 16px;">Đơn giá: <?php echo number_format($item['final_price'], 0, ',', '.'); ?> VNĐ</p>
                         </div>
                     </div>

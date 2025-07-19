@@ -1187,6 +1187,10 @@ foreach ($colors as $cl) {
             })
             .then(response => response.json())
             .then(data => {
+                if (data.redirect) {
+                    window.location.href = data.redirect;
+                    return;
+                }
                 if (data.success) {
                     showToast('success', 'Thành công', 'Đã thêm sản phẩm vào giỏ hàng');
                     setTimeout(() => {
@@ -1204,22 +1208,38 @@ foreach ($colors as $cl) {
 
         function buyNow(productId) {
             const quantity = parseInt(document.getElementById('quantity').value);
-            
+            // Lấy sizeid từ nút size đang active
+            const activeSizeBtn = document.querySelector('.size-btn.active');
+            if (!activeSizeBtn) {
+                showToast('warning', 'Cảnh báo', 'Vui lòng chọn size');
+                return;
+            }
+            const sizeId = activeSizeBtn.getAttribute('data-size-id');
+            // Lấy colorid từ nút màu đang active
+            const activeColorBtn = document.querySelector('.color-btn.active');
+            if (!activeColorBtn) {
+                showToast('warning', 'Cảnh báo', 'Vui lòng chọn màu sắc');
+                return;
+            }
+            const colorId = activeColorBtn.getAttribute('data-color-id');
             if (isNaN(quantity) || quantity <= 0) {
                 showToast('warning', 'Cảnh báo', 'Vui lòng nhập số lượng hợp lệ');
                 return;
             }
-            
             // Gửi request đến buy_now.php
             fetch('buy_now.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
                 },
-                body: `product_id=${productId}&quantity=${quantity}`
+                body: `product_id=${productId}&quantity=${quantity}&sizeid=${sizeId}&colorid=${colorId}`
             })
             .then(response => response.json())
             .then(data => {
+                if (data.redirect) {
+                    window.location.href = data.redirect;
+                    return;
+                }
                 if (data.success) {
                     showToast('success', 'Thành công', 'Chuyển hướng đến trang thanh toán...');
                     setTimeout(() => {
