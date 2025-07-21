@@ -10,7 +10,7 @@ app = Flask(__name__)
 CORS(app)
 
 # Khởi tạo client OpenAI
-client = OpenAI(api_key="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")
+client = OpenAI(api_key="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")  # Đừng để API key trên code thật!  # Đừng để API key trên code thật!
 
 # Định nghĩa các công cụ (tools) cho function calling
 tools = [
@@ -360,13 +360,13 @@ def lay_doanh_thu_loi_nhuan(thang, nam):
             return {'doanh_thu': 0, 'loi_nhuan': 0}
         query = """ 
             SELECT 
-                COALESCE(SUM(cd.giaban * cd.soluong), 0) as doanh_thu,
-                COALESCE(SUM((cd.giaban - sp.gianhap) * cd.soluong), 0) as loi_nhuan
+                COALESCE(SUM(cd.gia * cd.soluong), 0) as doanh_thu,
+                COALESCE(SUM((cd.gia - sp.gianhap) * cd.soluong), 0) as loi_nhuan
             FROM donhang d
-            JOIN chitietdonhang cd ON d.iddonhang = cd.iddonhang
-            JOIN sanpham sp ON cd.idsanpham = sp.idsanpham
-            WHERE MONTH(d.ngaytao) = %s 
-            AND YEAR(d.ngaytao) = %s
+            JOIN chitietdonhang cd ON d.donhangid = cd.madonhang
+            JOIN sanpham sp ON cd.masanpham = sp.sanphamid
+            WHERE MONTH(d.ngaydat) = %s 
+            AND YEAR(d.ngaydat) = %s
             AND d.trangthai = 'Hoàn thành'
         """
         cursor = conn.cursor(dictionary=True)
@@ -397,12 +397,12 @@ def lay_san_pham_ban_chay(thang, nam):
                 sp.tensanpham,
                 SUM(cd.soluong) as tong_so_luong
             FROM donhang d
-            JOIN chitietdonhang cd ON d.iddonhang = cd.iddonhang
-            JOIN sanpham sp ON cd.idsanpham = sp.idsanpham
-            WHERE MONTH(d.ngaytao) = %s 
-            AND YEAR(d.ngaytao) = %s
+            JOIN chitietdonhang cd ON d.donhangid = cd.madonhang
+            JOIN sanpham sp ON cd.masanpham = sp.sanphamid
+            WHERE MONTH(d.ngaydat) = %s 
+            AND YEAR(d.ngaydat) = %s
             AND d.trangthai = 'Hoàn thành'
-            GROUP BY sp.idsanpham, sp.tensanpham
+            GROUP BY sp.sanphamid, sp.tensanpham
             ORDER BY tong_so_luong DESC
             LIMIT 3
         """
@@ -434,8 +434,8 @@ def lay_thong_ke_don_hang(thang, nam):
                 SUM(CASE WHEN trangthai = 'Hoàn thành' THEN 1 ELSE 0 END) as thanh_cong,
                 SUM(CASE WHEN trangthai != 'Hoàn thành' THEN 1 ELSE 0 END) as that_bai
             FROM donhang
-            WHERE MONTH(ngaytao) = %s 
-            AND YEAR(ngaytao) = %s
+            WHERE MONTH(ngaydat) = %s 
+            AND YEAR(ngaydat) = %s
         """
         cursor = conn.cursor(dictionary=True)
         cursor.execute(query, (thang, nam))
@@ -589,19 +589,47 @@ def tao_bao_cao_van_ban(bao_cao_du_lieu):
         return "Xin lỗi, không thể tạo báo cáo văn bản. Vui lòng thử lại."
 @app.route('/api/adminchat', methods=['POST'])
 def admin_chat():
-    """API endpoint để tạo và trả về báo cáo tháng (dùng cho adminchat)"""
     try:
-        bao_cao_du_lieu = tao_bao_cao_thang()
-        if not bao_cao_du_lieu:
-            return jsonify({"status": "error", "message": "Không thể tạo báo cáo. Vui lòng thử lại."}), 500
-        # Tạo báo cáo văn bản bằng OpenAI
-        bao_cao_van_ban = tao_bao_cao_van_ban(bao_cao_du_lieu)
-        luu_bao_cao(bao_cao_van_ban)
-        print("done")
-        return jsonify({
-            "status": "success",
-            "bao_cao": bao_cao_van_ban
-        }), 200
+        data = request.json or {}
+        message = data.get('message', '').strip()
+        if not message:
+            return jsonify({"status": "error", "message": "Vui lòng nhập câu hỏi."}), 400
+
+        now = datetime.now()
+        thang = now.month
+        nam = now.year
+        doanh_thu_loi_nhuan = lay_doanh_thu_loi_nhuan(thang, nam)
+        san_pham_ban_chay = lay_san_pham_ban_chay(thang, nam)
+        thong_ke_don_hang = lay_thong_ke_don_hang(thang, nam)
+        chien_luoc = tao_chien_luoc_kinh_doanh(now)
+        # Có thể lấy thêm các số liệu khác nếu muốn
+
+        prompt = f"""
+Bạn là trợ lý quản trị shop. Dưới đây là dữ liệu kinh doanh tháng {thang}/{nam}:
+- Doanh thu: {doanh_thu_loi_nhuan['doanh_thu']:,} VND
+- Lợi nhuận: {doanh_thu_loi_nhuan['loi_nhuan']:,} VND
+- Top sản phẩm bán chạy: {san_pham_ban_chay}
+- Đơn hàng: {thong_ke_don_hang}
+- Chiến lược kinh doanh: {chien_luoc}
+
+Câu hỏi của admin: \"{message}\"
+
+Dựa vào dữ liệu trên, hãy trả lời ngắn gọn, đúng trọng tâm, bằng tiếng Việt.
+Nếu câu hỏi không liên quan đến dữ liệu, hãy trả lời \"Xin lỗi, tôi không có thông tin về yêu cầu này.\".
+"""
+
+        response = client.chat.completions.create(
+            model="gpt-4o-mini-2024-07-18",
+            messages=[
+                {"role": "system", "content": "Bạn là trợ lý quản trị shop, trả lời ngắn gọn, đúng trọng tâm, bằng tiếng Việt."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.3,
+            max_tokens=600
+        )
+        answer = response.choices[0].message.content.strip()
+        return jsonify({"status": "success", "bao_cao": answer}), 200
+
     except Exception as e:
         print(f"Lỗi trong adminchat: {e}")
         return jsonify({"status": "error", "message": "Đã xảy ra lỗi khi tạo báo cáo. Vui lòng thử lại."}), 500
