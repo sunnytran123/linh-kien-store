@@ -189,7 +189,7 @@
 
         .product-image {
             width: 100%;
-            height: 200px; /* hoặc 300px, tuỳ bạn */
+            height: 300px; /* tăng chiều cao để ảnh lớn hơn */
             object-fit: contain;
             background: #fff;
             display: block;
@@ -198,7 +198,8 @@
         .product-image img {
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            object-fit: contain; /* hiển thị đầy đủ ảnh, không bị crop */
+            background: #fff;
         }
 
         .product-info {

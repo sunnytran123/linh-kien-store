@@ -166,7 +166,7 @@ chatAdminBubbleForm.onsubmit = async function(e){
     appendAdminBubbleMsg('Đang trả lời...', 'bot');
     try{
         // Gửi request đến API Flask cho admin
-        const response = await fetch('http://127.0.0.1:5000/api/admin_chat', {
+        const response = await fetch('http://127.0.0.1:5000/api/adminchat', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

@@ -4,6 +4,7 @@ import mysql.connector
 import json
 from flask_cors import CORS
 import traceback
+from datetime import datetime
 
 app = Flask(__name__)
 CORS(app)
@@ -247,6 +248,52 @@ def generate_product_card(data, query):
         return "Xin lỗi, hệ thống gặp sự cố khi hiển thị sản phẩm."
 
 
+def lay_doanh_thu_loi_nhuan(ngay=None, thang=None, nam=None):
+    """
+    Lấy doanh thu và lợi nhuận theo ngày, tháng, năm (có thể truyền 1, 2 hoặc cả 3 tham số).
+    """
+    try:
+        conn = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database="shoplinhkien"
+        )
+        if not conn:
+            return {'doanh_thu': 0, 'loi_nhuan': 0}
+
+        query = """
+            SELECT 
+                COALESCE(SUM(cd.gia * cd.soluong), 0) as doanh_thu,
+                COALESCE(SUM((cd.gia - sp.gianhap) * cd.soluong), 0) as loi_nhuan
+            FROM donhang d
+            JOIN chitietdonhang cd ON d.donhangid = cd.madonhang
+            JOIN sanpham sp ON cd.masanpham = sp.sanphamid
+            WHERE d.trangthai = 'Hoàn thành'
+        """
+        params = []
+
+        if nam:
+            query += " AND YEAR(d.ngaydat) = %s"
+            params.append(nam)
+        if thang:
+            query += " AND MONTH(d.ngaydat) = %s"
+            params.append(thang)
+        if ngay:
+            query += " AND DAY(d.ngaydat) = %s"
+            params.append(ngay)
+
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(query, tuple(params))
+        ket_qua = cursor.fetchone()
+        cursor.close()
+        conn.close()
+
+        return ket_qua or {'doanh_thu': 0, 'loi_nhuan': 0}
+    except Exception as e:
+        print(f"Lỗi trong lay_doanh_thu_loi_nhuan: {e}")
+        return {'doanh_thu': 0, 'loi_nhuan': 0}
+
 
 @app.route('/api/chat', methods=['POST'])
 def chat():
@@ -298,5 +345,265 @@ def chat():
         return jsonify({"status": "error", "message": f"Đã xảy ra lỗi: {e}"}), 500
 
 
+
+# Hàm nhỏ: Lấy doanh thu và lợi nhuận
+def lay_doanh_thu_loi_nhuan(thang, nam):
+    """Lấy doanh thu và lợi nhuận cho một tháng và năm cụ thể"""
+    try:
+        conn = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database="shoplinhkien"
+        )
+        if not conn:
+            return {'doanh_thu': 0, 'loi_nhuan': 0}
+        query = """ 
+            SELECT 
+                COALESCE(SUM(cd.giaban * cd.soluong), 0) as doanh_thu,
+                COALESCE(SUM((cd.giaban - sp.gianhap) * cd.soluong), 0) as loi_nhuan
+            FROM donhang d
+            JOIN chitietdonhang cd ON d.iddonhang = cd.iddonhang
+            JOIN sanpham sp ON cd.idsanpham = sp.idsanpham
+            WHERE MONTH(d.ngaytao) = %s 
+            AND YEAR(d.ngaytao) = %s
+            AND d.trangthai = 'Hoàn thành'
+        """
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(query, (thang, nam))
+        ket_qua = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        return ket_qua or {'doanh_thu': 0, 'loi_nhuan': 0}
+    except Exception as e:
+        print(f"Lỗi trong lay_doanh_thu_loi_nhuan: {e}")
+        return {'doanh_thu': 0, 'loi_nhuan': 0}
+
+# Hàm nhỏ: Lấy top 3 sản phẩm bán chạy
+
+def lay_san_pham_ban_chay(thang, nam):
+    """Lấy top 3 sản phẩm bán chạy nhất trong tháng"""
+    try:
+        conn = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database="shoplinhkien"
+        )
+        if not conn:
+            return []
+        query = """
+            SELECT 
+                sp.tensanpham,
+                SUM(cd.soluong) as tong_so_luong
+            FROM donhang d
+            JOIN chitietdonhang cd ON d.iddonhang = cd.iddonhang
+            JOIN sanpham sp ON cd.idsanpham = sp.idsanpham
+            WHERE MONTH(d.ngaytao) = %s 
+            AND YEAR(d.ngaytao) = %s
+            AND d.trangthai = 'Hoàn thành'
+            GROUP BY sp.idsanpham, sp.tensanpham
+            ORDER BY tong_so_luong DESC
+            LIMIT 3
+        """
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(query, (thang, nam))
+        ket_qua = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return ket_qua
+    except Exception as e:
+        print(f"Lỗi trong lay_san_pham_ban_chay: {e}")
+        return []
+
+# Hàm nhỏ: Thống kê đơn hàng thành công/thất bại
+
+def lay_thong_ke_don_hang(thang, nam):
+    """Lấy thống kê đơn hàng thành công và không thành công"""
+    try:
+        conn = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database="shoplinhkien"
+        )
+        if not conn:
+            return {'thanh_cong': 0, 'that_bai': 0}
+        query = """
+            SELECT 
+                SUM(CASE WHEN trangthai = 'Hoàn thành' THEN 1 ELSE 0 END) as thanh_cong,
+                SUM(CASE WHEN trangthai != 'Hoàn thành' THEN 1 ELSE 0 END) as that_bai
+            FROM donhang
+            WHERE MONTH(ngaytao) = %s 
+            AND YEAR(ngaytao) = %s
+        """
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(query, (thang, nam))
+        ket_qua = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        return ket_qua or {'thanh_cong': 0, 'that_bai': 0}
+    except Exception as e:
+        print(f"Lỗi trong lay_thong_ke_don_hang: {e}")
+        return {'thanh_cong': 0, 'that_bai': 0}
+
+
+
+def tao_chien_luoc_kinh_doanh(ngay_hien_tai=None):
+    """Tạo chiến lược kinh doanh dựa trên thời gian hiện tại (hoặc truyền vào)"""
+    if ngay_hien_tai is None:
+        ngay_hien_tai = datetime.now()
+    thang = ngay_hien_tai.month
+    su_kien = {
+        1: ["Tết Dương lịch", "Khuyến mãi đầu năm, giảm giá 10-20% cho các dòng sản phẩm nổi bật, chạy quảng cáo trên mạng xã hội."],
+        2: ["Tết Nguyên Đán", "Chạy quảng cáo cho các mẫu quần áo, túi sang trọng, tặng quà Tết, ưu đãi combo."],
+        3: ["Mùa lễ hội", "Tăng cường khuyến mãi cho các sản phẩm thời trang, phối hợp với các KOLs."],
+        4: ["Lễ 30/4 - 1/5", "Giảm giá cho sản phẩm thể thao, năng động, tăng quảng cáo trên Facebook và Tiktok."],
+        6: ["Mùa hè", "Đẩy mạnh các sản phẩm mát mẻ, thời trang đi biển, ưu đãi mua nhiều tặng nhiều."],
+        8: ["Back to school", "Khuyến mãi balo, túi xách, đồng phục học sinh, giảm giá cho nhóm khách hàng trẻ."],
+        9: ["Lễ Quốc khánh 2/9", "Khuyến mãi cho các dòng sản phẩm công sở, tặng voucher cho khách hàng thân thiết."],
+        11: ["Black Friday", "Chạy chiến dịch giảm giá lớn, flash sale, tăng cường quảng cáo online."],
+        12: ["Giáng sinh & Năm mới", "Chạy chiến dịch quảng cáo lớn, giảm giá 15-25% toàn bộ sản phẩm, tặng hộp quà hoặc phụ kiện."]
+    }
+    chien_luoc = su_kien.get(thang, ["Không có sự kiện đặc biệt", "Tập trung quảng cáo các sản phẩm bán chạy, đẩy mạnh SEO, email marketing và chăm sóc khách hàng thân thiết."])
+    return {
+        'su_kien': chien_luoc[0],
+        'chien_luoc': chien_luoc[1]
+    }
+
+def luu_bao_cao(noi_dung):
+    """Lưu báo cáo văn bản vào cơ sở dữ liệu"""
+    try:
+        conn = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database="shoplinhkien"
+        )
+        if not conn:
+            print("Không thể kết nối cơ sở dữ liệu để lưu báo cáo")
+            return False
+        query = """
+            INSERT INTO baocao (noi_dung, ngaytao)
+            VALUES (%s, NOW())
+        """
+        cursor = conn.cursor()
+        cursor.execute(query, (noi_dung,))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return True
+    except Exception as e:
+        print(f"Lỗi khi lưu báo cáo: {e}")
+        return False
+
+def tao_bao_cao_thang():
+    """Tạo báo cáo toàn diện cho tháng hiện tại"""
+    try:
+        ngay_hien_tai = datetime.now()
+        thang_hien_tai = ngay_hien_tai.month
+        nam_hien_tai = ngay_hien_tai.year
+        # Tính tháng và năm trước đó
+        if thang_hien_tai == 1:
+            thang_truoc = 12
+            nam_truoc = nam_hien_tai - 1
+        else:
+            thang_truoc = thang_hien_tai - 1
+            nam_truoc = nam_hien_tai
+        # Lấy dữ liệu tháng hiện tại
+        thong_ke_hien_tai = lay_doanh_thu_loi_nhuan(thang_hien_tai, nam_hien_tai)
+        san_pham_ban_chay = lay_san_pham_ban_chay(thang_hien_tai, nam_hien_tai)
+        thong_ke_don_hang = lay_thong_ke_don_hang(thang_hien_tai, nam_hien_tai)
+        thong_ke_truoc = lay_doanh_thu_loi_nhuan(thang_truoc, nam_truoc)
+        ti_le_doanh_thu = ((thong_ke_hien_tai['doanh_thu'] - thong_ke_truoc['doanh_thu']) / thong_ke_truoc['doanh_thu'] * 100) if thong_ke_truoc['doanh_thu'] > 0 else 0
+        ti_le_loi_nhuan = ((thong_ke_hien_tai['loi_nhuan'] - thong_ke_truoc['loi_nhuan']) / thong_ke_truoc['loi_nhuan'] * 100) if thong_ke_truoc['loi_nhuan'] > 0 else 0
+        so_sanh = {
+            'ti_le_doanh_thu': round(ti_le_doanh_thu, 2),
+            'ti_le_loi_nhuan': round(ti_le_loi_nhuan, 2),
+            'nhan_xet': (
+                f"Doanh thu {'tăng' if ti_le_doanh_thu > 0 else 'giảm'} {abs(round(ti_le_doanh_thu, 2))}% "
+                f"và lợi nhuận {'tăng' if ti_le_loi_nhuan > 0 else 'giảm'} {abs(round(ti_le_loi_nhuan, 2))}% "
+                "so với tháng trước."
+            )
+        }
+        chien_luoc = tao_chien_luoc_kinh_doanh(ngay_hien_tai)
+        bao_cao = {
+            'thang': thang_hien_tai,
+            'nam': nam_hien_tai,
+            'doanh_thu': float(thong_ke_hien_tai['doanh_thu']),
+            'loi_nhuan': float(thong_ke_hien_tai['loi_nhuan']),
+            'so_sanh': so_sanh,
+            'san_pham_ban_chay': [
+                {'ten': sp['tensanpham'], 'so_luong': int(sp['tong_so_luong'])}
+                for sp in san_pham_ban_chay
+            ],
+            'thong_ke_don_hang': {
+                'thanh_cong': int(thong_ke_don_hang['thanh_cong'] or 0),
+                'that_bai': int(thong_ke_don_hang['that_bai'] or 0)
+            },
+            'chien_luoc_kinh_doanh': chien_luoc
+        }
+        return bao_cao
+    except Exception as e:
+        print(f"Lỗi trong tao_bao_cao_thang: {e}")
+        return {}
+
+def tao_bao_cao_van_ban(bao_cao_du_lieu):
+    """Tạo báo cáo dạng văn bản bằng API OpenAI từ dữ liệu báo cáo"""
+    try:
+        prompt = f"""
+        Bạn là một chuyên gia phân tích kinh doanh, hãy viết một bài báo cáo kinh doanh chuyên nghiệp bằng tiếng Việt cho cửa hàng Shop Linh Kiện. Dựa trên dữ liệu dưới đây, tạo một bài báo cáo có cấu trúc rõ ràng, dễ hiểu, và mang tính chuyên nghiệp. Bài báo cáo cần có các phần sau:
+
+        1. **Tổng quan hoạt động kinh doanh**: Nêu rõ doanh thu, lợi nhuận, số đơn hàng thành công và không thành công của tháng {bao_cao_du_lieu['thang']}/{bao_cao_du_lieu['nam']}.
+        2. **So sánh với tháng trước**: Đưa ra nhận xét về sự tăng/giảm doanh thu và lợi nhuận so với tháng trước, kèm theo số liệu cụ thể.
+        3. **Sản phẩm bán chạy**: Liệt kê top 3 sản phẩm bán chạy nhất, kèm số lượng bán được và nhận xét về xu hướng thị trường.
+        4. **Định hướng kinh doanh**: Đưa ra chiến lược kinh doanh cho tháng tới, dựa trên sự kiện {bao_cao_du_lieu['chien_luoc_kinh_doanh']['su_kien']} và gợi ý chiến lược {bao_cao_du_lieu['chien_luoc_kinh_doanh']['chien_luoc']}.
+
+        **Dữ liệu báo cáo**:
+        - Doanh thu: {bao_cao_du_lieu['doanh_thu']:,} VND
+        - Lợi nhuận: {bao_cao_du_lieu['loi_nhuan']:,} VND
+        - So sánh với tháng trước: {bao_cao_du_lieu['so_sanh']['nhan_xet']}
+        - Sản phẩm bán chạy: {bao_cao_du_lieu['san_pham_ban_chay']}
+        - Đơn hàng: {bao_cao_du_lieu['thong_ke_don_hang']['thanh_cong']} thành công, {bao_cao_du_lieu['thong_ke_don_hang']['that_bai']} không thành công
+        - Chiến lược kinh doanh: Sự kiện {bao_cao_du_lieu['chien_luoc_kinh_doanh']['su_kien']}, gợi ý {bao_cao_du_lieu['chien_luoc_kinh_doanh']['chien_luoc']}
+
+        **Yêu cầu**:
+        - Bài báo cáo dài khoảng 300-500 từ.
+        - Ngôn ngữ trang trọng, phù hợp với báo cáo kinh doanh.
+        - Sử dụng số liệu chính xác từ dữ liệu cung cấp.
+        - Tránh thêm thông tin không có trong dữ liệu.
+        """
+        response = client.chat.completions.create(
+            model="gpt-4o-mini-2024-07-18",
+            messages=[
+                {"role": "system",
+                 "content": "Bạn là một chuyên gia phân tích kinh doanh, viết báo cáo bằng tiếng Việt chuyên nghiệp."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.5,
+            max_tokens=1000
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        print(f"Lỗi trong tao_bao_cao_van_ban: {e}")
+        return "Xin lỗi, không thể tạo báo cáo văn bản. Vui lòng thử lại."
+@app.route('/api/adminchat', methods=['POST'])
+def admin_chat():
+    """API endpoint để tạo và trả về báo cáo tháng (dùng cho adminchat)"""
+    try:
+        bao_cao_du_lieu = tao_bao_cao_thang()
+        if not bao_cao_du_lieu:
+            return jsonify({"status": "error", "message": "Không thể tạo báo cáo. Vui lòng thử lại."}), 500
+        # Tạo báo cáo văn bản bằng OpenAI
+        bao_cao_van_ban = tao_bao_cao_van_ban(bao_cao_du_lieu)
+        luu_bao_cao(bao_cao_van_ban)
+        print("done")
+        return jsonify({
+            "status": "success",
+            "bao_cao": bao_cao_van_ban
+        }), 200
+    except Exception as e:
+        print(f"Lỗi trong adminchat: {e}")
+        return jsonify({"status": "error", "message": "Đã xảy ra lỗi khi tạo báo cáo. Vui lòng thử lại."}), 500
 if __name__ == "__main__":
     app.run(debug=True)
