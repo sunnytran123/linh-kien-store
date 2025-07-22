@@ -650,9 +650,10 @@ def tao_bao_cao_van_ban(bao_cao_du_lieu):
         print(f"Lỗi trong tao_bao_cao_van_ban: {e}")
         return "Xin lỗi, không thể tạo báo cáo văn bản. Vui lòng thử lại."
 
+
 def lay_san_pham_dang_khuyen_mai(thang=None, nam=None):
     """
-    Lấy các sản phẩm đang có khuyến mãi hiệu lực trong tháng/năm truyền vào (hoặc hiện tại nếu không truyền).
+    Lấy các sản phẩm đang có khuyến mãi hiệu lực.
     Trả về list dict: [ {sanphamid, tensanpham, gia, giakhuyenmai, duongdan, mota, tendanhmuc, tenkhuyenmai, ngaybatdau, ngayketthuc} ]
     """
     try:
@@ -663,24 +664,41 @@ def lay_san_pham_dang_khuyen_mai(thang=None, nam=None):
             database="shoplinhkien"
         )
         cursor = conn.cursor(dictionary=True)
+
+        # Lấy ngày giờ hiện tại nếu thang và nam không được truyền vào
         now = datetime.now()
         if thang is None:
             thang = now.month
         if nam is None:
             nam = now.year
+
+        # Truy vấn để lấy các sản phẩm có khuyến mãi đang diễn ra
         query = '''
-            SELECT sp.sanphamid, sp.tensanpham, sp.gia, km.giatri as giakhuyenmai, ha.duongdan, sp.mota, dm.tendanhmuc, km.tenkhuyenmai, km.ngaybatdau, km.ngayketthuc
-            FROM sanpham sp
-            JOIN khuyenmai km ON sp.makhuyenmai = km.khuyenmaiid
+            SELECT 
+                sp.sanphamid, 
+                sp.tensanpham, 
+                sp.gia, 
+                km.giatri AS giakhuyenmai, 
+                MIN(ha.duongdan) AS duongdan,  -- Lấy ảnh đầu tiên của sản phẩm
+                sp.mota, 
+                dm.tendanhmuc, 
+                km.tenkhuyenmai, 
+                km.ngaybatdau, 
+                km.ngayketthuc
+            FROM khuyenmai km
+            JOIN sanpham_khuyenmai skm ON km.khuyenmaiid = skm.khuyenmai_id
+            JOIN sanpham sp ON skm.sanpham_id = sp.sanphamid
             LEFT JOIN hinhanhsanpham ha ON sp.sanphamid = ha.masanpham
             LEFT JOIN danhmuc dm ON sp.madanhmuc = dm.danhmucid
-            WHERE MONTH(km.ngaybatdau) <= %s AND MONTH(km.ngayketthuc) >= %s
-              AND YEAR(km.ngaybatdau) <= %s AND YEAR(km.ngayketthuc) >= %s
+            WHERE NOW() BETWEEN km.ngaybatdau AND km.ngayketthuc
+            GROUP BY sp.sanphamid
         '''
-        cursor.execute(query, (thang, thang, nam, nam))
+
+        cursor.execute(query)  # Không cần tham số
         result = cursor.fetchall()
         cursor.close()
         conn.close()
+
         # Lấy 1 ảnh đại diện duy nhất cho mỗi sản phẩm
         sanpham_dict = {}
         for row in result:
@@ -691,11 +709,17 @@ def lay_san_pham_dang_khuyen_mai(thang=None, nam=None):
                 elif not str(d['duongdan']).startswith('picture/'):
                     d['duongdan'] = f"picture/{d['duongdan']}"
                 sanpham_dict[d['sanphamid']] = d
+
         return list(sanpham_dict.values())
+
     except Exception as e:
         print(f"Lỗi trong lay_san_pham_dang_khuyen_mai: {e}")
         return []
 
+
+# Gọi hàm và kiểm tra kết quả
+result = lay_san_pham_dang_khuyen_mai()
+print(result)
 # Hàm gợi ý sản phẩm nên khuyến mãi theo sự kiện
 
 def goi_y_san_pham_khuyen_mai_theo_su_kien(su_kien, thang=None, nam=None, limit=5):

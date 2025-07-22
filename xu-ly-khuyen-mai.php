@@ -132,6 +132,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
 
+            // Kiểm tra nếu khuyến mãi đang diễn ra và cập nhật `makhuyenmai` trong bảng `sanpham`
+            $current_time = date('Y-m-d H:i:s');
+            if ($current_time >= $ngaybatdau && $current_time <= $ngayketthuc) {
+                $sql_update_sanpham = "UPDATE sanpham SET makhuyenmai = 1 WHERE sanphamid IN (" . implode(',', $sanpham) . ")";
+                $stmt_update_sanpham = $conn->prepare($sql_update_sanpham);
+                if (!$stmt_update_sanpham->execute()) {
+                    throw new Exception("Không thể cập nhật makhuyenmai cho sản phẩm: " . $stmt_update_sanpham->error);
+                }
+            }
+
             // Commit giao dịch
             $conn->commit();
             echo json_encode(['success' => true, 'message' => 'Khuyến mãi và sản phẩm đã được cập nhật thành công.']);
@@ -141,9 +151,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             echo json_encode(['success' => false, 'message' => $e->getMessage()]);
         }
         exit;
-}
-
+    }
 }
 
 header('Content-Type: application/json');
-?> 
+?>
