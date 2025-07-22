@@ -177,15 +177,16 @@ chatAdminBubbleForm.onsubmit = async function(e){
         // Xóa "Đang trả lời..."
         chatAdminBubbleMessages.lastChild.remove();
         // Nếu trả về HTML (thẻ sản phẩm), chèn innerHTML, nếu không thì textContent
-        if(data && data.response) {
+        if(data && (data.bao_cao || data.response)) {
+            const msg = data.bao_cao || data.response;
             const msgDiv = document.createElement('div');
             msgDiv.className = 'bubble-message-admin bot';
             const contentDiv = document.createElement('div');
             contentDiv.className = 'message-content';
-            if(/<\/?[a-z][\s\S]*>/i.test(data.response)) {
-                contentDiv.innerHTML = data.response;
+            if(/<\/?[a-z][\s\S]*>/i.test(msg)) {
+                contentDiv.innerHTML = msg;
             } else {
-                contentDiv.textContent = data.response;
+                contentDiv.textContent = msg;
             }
             msgDiv.appendChild(contentDiv);
             chatAdminBubbleMessages.appendChild(msgDiv);

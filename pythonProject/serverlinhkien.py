@@ -5,6 +5,7 @@ import json
 from flask_cors import CORS
 import traceback
 from datetime import datetime
+import re
 
 app = Flask(__name__)
 CORS(app)
@@ -328,8 +329,10 @@ def chat():
             for item in data:
                 if 'duongdan' not in item or not item['duongdan']:
                     item['duongdan'] = 'picture/no-image.png'
-                elif isinstance(item['duongdan'], str) and not item['duongdan'].startswith('picture/'):
-                    item['duongdan'] = f"picture/{item['duongdan']}"
+                else:
+                    duongdan_str = str(item['duongdan'])
+                    if not duongdan_str.startswith('picture/'):
+                        item['duongdan'] = f"picture/{duongdan_str}"
             response = generate_product_card(data, message_text)
             print(f"Trả về thẻ sản phẩm: {response}")
             return jsonify({"status": "success", "response": response}), 200
@@ -347,7 +350,7 @@ def chat():
 
 
 # Hàm nhỏ: Lấy doanh thu và lợi nhuận
-def lay_doanh_thu_loi_nhuan(thang, nam):
+def lay_doanh_thu_loi_nhuan_theo_thang_nam(thang, nam):
     """Lấy doanh thu và lợi nhuận cho một tháng và năm cụ thể"""
     try:
         conn = mysql.connector.connect(
@@ -376,7 +379,7 @@ def lay_doanh_thu_loi_nhuan(thang, nam):
         conn.close()
         return ket_qua or {'doanh_thu': 0, 'loi_nhuan': 0}
     except Exception as e:
-        print(f"Lỗi trong lay_doanh_thu_loi_nhuan: {e}")
+        print(f"Lỗi trong lay_doanh_thu_loi_nhuan_theo_thang_nam: {e}")
         return {'doanh_thu': 0, 'loi_nhuan': 0}
 
 # Hàm nhỏ: Lấy top 3 sản phẩm bán chạy
@@ -449,21 +452,76 @@ def lay_thong_ke_don_hang(thang, nam):
 
 
 
-def tao_chien_luoc_kinh_doanh(ngay_hien_tai=None):
-    """Tạo chiến lược kinh doanh dựa trên thời gian hiện tại (hoặc truyền vào)"""
-    if ngay_hien_tai is None:
-        ngay_hien_tai = datetime.now()
-    thang = ngay_hien_tai.month
+def extract_month_year_from_text(text):
+    """
+    Trích xuất tháng và năm từ câu hỏi tiếng Việt.
+    Trả về (thang, nam) hoặc (None, None) nếu không tìm thấy.
+    """
+    now = datetime.now()
+    text = text.lower()
+    # Tìm "tháng X" (X là số)
+    match = re.search(r"tháng\s*(\d{1,2})", text)
+    thang = None
+    nam = None
+    if match:
+        thang = int(match.group(1))
+        # Tìm năm nếu có
+        match_nam = re.search(r"năm\s*(\d{4})", text)
+        if match_nam:
+            nam = int(match_nam.group(1))
+        else:
+            nam = now.year
+        return thang, nam
+    # "tháng này"
+    if "tháng này" in text:
+        return now.month, now.year
+    # "tháng trước"
+    if "tháng trước" in text:
+        prev_month = now.month - 1 if now.month > 1 else 12
+        prev_year = now.year if now.month > 1 else now.year - 1
+        return prev_month, prev_year
+    # "tháng sau"
+    if "tháng sau" in text:
+        next_month = now.month + 1 if now.month < 12 else 1
+        next_year = now.year if now.month < 12 else now.year + 1
+        return next_month, next_year
+    return None, None
+
+# Sửa hàm này để nhận thêm thang, nam
+
+def tao_chien_luoc_kinh_doanh(ngay_hien_tai=None, thang=None, nam=None):
+    if thang is not None and nam is not None:
+        dt = datetime(year=nam, month=thang, day=1)
+    elif ngay_hien_tai is not None:
+        dt = ngay_hien_tai
+    else:
+        dt = datetime.now()
+    thang = dt.month
     su_kien = {
-        1: ["Tết Dương lịch", "Khuyến mãi đầu năm, giảm giá 10-20% cho các dòng sản phẩm nổi bật, chạy quảng cáo trên mạng xã hội."],
-        2: ["Tết Nguyên Đán", "Chạy quảng cáo cho các mẫu quần áo, túi sang trọng, tặng quà Tết, ưu đãi combo."],
-        3: ["Mùa lễ hội", "Tăng cường khuyến mãi cho các sản phẩm thời trang, phối hợp với các KOLs."],
-        4: ["Lễ 30/4 - 1/5", "Giảm giá cho sản phẩm thể thao, năng động, tăng quảng cáo trên Facebook và Tiktok."],
-        6: ["Mùa hè", "Đẩy mạnh các sản phẩm mát mẻ, thời trang đi biển, ưu đãi mua nhiều tặng nhiều."],
-        8: ["Back to school", "Khuyến mãi balo, túi xách, đồng phục học sinh, giảm giá cho nhóm khách hàng trẻ."],
-        9: ["Lễ Quốc khánh 2/9", "Khuyến mãi cho các dòng sản phẩm công sở, tặng voucher cho khách hàng thân thiết."],
-        11: ["Black Friday", "Chạy chiến dịch giảm giá lớn, flash sale, tăng cường quảng cáo online."],
-        12: ["Giáng sinh & Năm mới", "Chạy chiến dịch quảng cáo lớn, giảm giá 15-25% toàn bộ sản phẩm, tặng hộp quà hoặc phụ kiện."]
+        1: ["Tết Dương lịch",
+            "Khuyến mãi đầu năm, giảm giá 10-20% cho các bộ sưu tập quần áo mùa đông, túi xách nữ cao cấp, chạy quảng cáo trên mạng xã hội."],
+        2: ["Tết Nguyên Đán",
+            "Chạy quảng cáo cho các mẫu quần áo mới, túi xách thời trang, tặng quà Tết, ưu đãi combo, giảm giá cho bộ quà tặng đặc biệt."],
+        3: ["Mùa lễ hội",
+            "Tăng cường khuyến mãi cho các sản phẩm thời trang xuân hè, phối hợp với các KOLs để quảng bá các bộ sưu tập mới, ưu đãi mua 1 tặng 1 cho túi xách."],
+        4: ["Lễ 30/4 - 1/5",
+            "Giảm giá cho sản phẩm thời trang nam nữ, túi xách nữ, tăng quảng cáo trên Facebook và Tiktok, tổ chức flash sale vào cuối tuần."],
+        5: ["Mùa hè",
+            "Đẩy mạnh các sản phẩm thời trang đi biển (áo thun, váy, bikini), ưu đãi mua nhiều tặng nhiều, quảng cáo trên Instagram và Tiktok."],
+        6: ["Quốc tế Thiếu Nhi",
+            "Khuyến mãi đặc biệt dành cho các chàng trai tặng quà cho các bạn nữ. Giảm giá cho túi xách nữ, quần áo nữ thời trang. Tặng quà tặng kèm cho các đơn hàng từ 500k trở lên. Tăng cường quảng cáo trên Instagram và Tiktok, tổ chức chương trình ưu đãi cho các cặp đôi."],
+        7: ["Mùa du lịch",
+            "Khuyến mãi các sản phẩm du lịch (túi xách, quần áo mùa hè), giảm giá cho các set đồ đi biển hoặc đi du lịch, chương trình tích điểm đổi quà."],
+        8: ["Back to school",
+            "Khuyến mãi balo, túi xách thời trang cho học sinh và sinh viên, giảm giá các sản phẩm thời trang trẻ trung, giảm giá cho nhóm khách hàng học sinh."],
+        9: ["Lễ Quốc khánh 2/9",
+            "Khuyến mãi cho các dòng sản phẩm công sở và thời trang trẻ trung, tặng voucher cho khách hàng thân thiết, tổ chức giảm giá đặc biệt cho áo sơ mi và túi xách."],
+        10: ["Lễ Halloween",
+             "Khuyến mãi các sản phẩm thời trang phù hợp với mùa Halloween, giảm giá cho các set đồ phong cách đặc biệt hoặc cosplay, chạy quảng cáo online."],
+        11: ["Black Friday",
+             "Chạy chiến dịch giảm giá lớn, flash sale, khuyến mãi cho các dòng quần áo nam nữ, túi xách nữ, đẩy mạnh quảng cáo online."],
+        12: ["Giáng sinh & Năm mới",
+             "Chạy chiến dịch quảng cáo lớn, giảm giá 15-25% toàn bộ sản phẩm, tặng hộp quà hoặc phụ kiện cho khách hàng, tổ chức chương trình tri ân khách hàng cũ."],
     }
     chien_luoc = su_kien.get(thang, ["Không có sự kiện đặc biệt", "Tập trung quảng cáo các sản phẩm bán chạy, đẩy mạnh SEO, email marketing và chăm sóc khách hàng thân thiết."])
     return {
@@ -511,12 +569,16 @@ def tao_bao_cao_thang():
             thang_truoc = thang_hien_tai - 1
             nam_truoc = nam_hien_tai
         # Lấy dữ liệu tháng hiện tại
-        thong_ke_hien_tai = lay_doanh_thu_loi_nhuan(thang_hien_tai, nam_hien_tai)
+        thong_ke_hien_tai = lay_doanh_thu_loi_nhuan_theo_thang_nam(thang_hien_tai, nam_hien_tai)
+        if thong_ke_hien_tai is not None and not isinstance(thong_ke_hien_tai, dict):
+            thong_ke_hien_tai = dict(thong_ke_hien_tai)
         san_pham_ban_chay = lay_san_pham_ban_chay(thang_hien_tai, nam_hien_tai)
         thong_ke_don_hang = lay_thong_ke_don_hang(thang_hien_tai, nam_hien_tai)
-        thong_ke_truoc = lay_doanh_thu_loi_nhuan(thang_truoc, nam_truoc)
-        ti_le_doanh_thu = ((thong_ke_hien_tai['doanh_thu'] - thong_ke_truoc['doanh_thu']) / thong_ke_truoc['doanh_thu'] * 100) if thong_ke_truoc['doanh_thu'] > 0 else 0
-        ti_le_loi_nhuan = ((thong_ke_hien_tai['loi_nhuan'] - thong_ke_truoc['loi_nhuan']) / thong_ke_truoc['loi_nhuan'] * 100) if thong_ke_truoc['loi_nhuan'] > 0 else 0
+        thong_ke_truoc = lay_doanh_thu_loi_nhuan_theo_thang_nam(thang_truoc, nam_truoc)
+        if thong_ke_truoc is not None and not isinstance(thong_ke_truoc, dict):
+            thong_ke_truoc = dict(thong_ke_truoc)
+        ti_le_doanh_thu = ((float(thong_ke_hien_tai['doanh_thu']) - float(thong_ke_truoc['doanh_thu'])) / float(thong_ke_truoc['doanh_thu']) * 100) if float(thong_ke_truoc['doanh_thu']) > 0 else 0
+        ti_le_loi_nhuan = ((float(thong_ke_hien_tai['loi_nhuan']) - float(thong_ke_truoc['loi_nhuan'])) / float(thong_ke_truoc['loi_nhuan']) * 100) if float(thong_ke_truoc['loi_nhuan']) > 0 else 0
         so_sanh = {
             'ti_le_doanh_thu': round(ti_le_doanh_thu, 2),
             'ti_le_loi_nhuan': round(ti_le_loi_nhuan, 2),
@@ -587,6 +649,111 @@ def tao_bao_cao_van_ban(bao_cao_du_lieu):
     except Exception as e:
         print(f"Lỗi trong tao_bao_cao_van_ban: {e}")
         return "Xin lỗi, không thể tạo báo cáo văn bản. Vui lòng thử lại."
+
+def lay_san_pham_dang_khuyen_mai(thang=None, nam=None):
+    """
+    Lấy các sản phẩm đang có khuyến mãi hiệu lực trong tháng/năm truyền vào (hoặc hiện tại nếu không truyền).
+    Trả về list dict: [ {sanphamid, tensanpham, gia, giakhuyenmai, duongdan, mota, tendanhmuc, tenkhuyenmai, ngaybatdau, ngayketthuc} ]
+    """
+    try:
+        conn = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database="shoplinhkien"
+        )
+        cursor = conn.cursor(dictionary=True)
+        now = datetime.now()
+        if thang is None:
+            thang = now.month
+        if nam is None:
+            nam = now.year
+        query = '''
+            SELECT sp.sanphamid, sp.tensanpham, sp.gia, km.giatri as giakhuyenmai, ha.duongdan, sp.mota, dm.tendanhmuc, km.tenkhuyenmai, km.ngaybatdau, km.ngayketthuc
+            FROM sanpham sp
+            JOIN khuyenmai km ON sp.makhuyenmai = km.khuyenmaiid
+            LEFT JOIN hinhanhsanpham ha ON sp.sanphamid = ha.masanpham
+            LEFT JOIN danhmuc dm ON sp.madanhmuc = dm.danhmucid
+            WHERE MONTH(km.ngaybatdau) <= %s AND MONTH(km.ngayketthuc) >= %s
+              AND YEAR(km.ngaybatdau) <= %s AND YEAR(km.ngayketthuc) >= %s
+        '''
+        cursor.execute(query, (thang, thang, nam, nam))
+        result = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        # Lấy 1 ảnh đại diện duy nhất cho mỗi sản phẩm
+        sanpham_dict = {}
+        for row in result:
+            if row['sanphamid'] not in sanpham_dict:
+                d = dict(row)
+                if not d.get('duongdan'):
+                    d['duongdan'] = 'picture/no-image.png'
+                elif not str(d['duongdan']).startswith('picture/'):
+                    d['duongdan'] = f"picture/{d['duongdan']}"
+                sanpham_dict[row['sanphamid']] = d
+        return list(sanpham_dict.values())
+    except Exception as e:
+        print(f"Lỗi trong lay_san_pham_dang_khuyen_mai: {e}")
+        return []
+
+# Hàm gợi ý sản phẩm nên khuyến mãi theo sự kiện
+
+def goi_y_san_pham_khuyen_mai_theo_su_kien(su_kien, thang=None, nam=None, limit=5):
+    """
+    Dựa vào nội dung sự kiện (chuỗi), tìm các sản phẩm phù hợp (tên, mô tả, danh mục chứa từ khóa sự kiện).
+    Trả về list dict sản phẩm.
+    """
+    try:
+        conn = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database="shoplinhkien"
+        )
+        cursor = conn.cursor(dictionary=True)
+        now = datetime.now()
+        if thang is None:
+            thang = now.month
+        if nam is None:
+            nam = now.year
+        # Tách từ khóa từ nội dung sự kiện
+        keywords = [w.strip().lower() for w in re.split(r'[,.\-;: ]', su_kien) if len(w.strip()) > 2]
+        # Tạo điều kiện LIKE cho tên, mô tả, danh mục
+        like_clauses = []
+        for kw in keywords:
+            like_clauses.append(f"(LOWER(sp.tensanpham) LIKE '%{kw}%' OR LOWER(sp.mota) LIKE '%{kw}%' OR LOWER(dm.tendanhmuc) LIKE '%{kw}%')")
+        where_like = ' OR '.join(like_clauses) if like_clauses else '1=1'
+        query = f'''
+            SELECT sp.sanphamid, sp.tensanpham, sp.gia, ha.duongdan, sp.mota, dm.tendanhmuc
+            FROM sanpham sp
+            LEFT JOIN hinhanhsanpham ha ON sp.sanphamid = ha.masanpham
+            LEFT JOIN danhmuc dm ON sp.madanhmuc = dm.danhmucid
+            WHERE {where_like}
+            GROUP BY sp.sanphamid
+            LIMIT %s
+        '''
+        cursor.execute(query, (limit,))
+        result = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        sanpham_list = []
+        for row in result:
+            d = dict(row)
+            if not d.get('duongdan'):
+                d['duongdan'] = 'picture/no-image.png'
+            elif not str(d['duongdan']).startswith('picture/'):
+                d['duongdan'] = f"picture/{d['duongdan']}"
+            sanpham_list.append(d)
+        return sanpham_list
+    except Exception as e:
+        print(f"Lỗi trong goi_y_san_pham_khuyen_mai_theo_su_kien: {e}")
+        return []
+
+# Prompt cho AI (nếu cần):
+# """
+# Bạn là trợ lý quản trị shop. Khi admin hỏi "sản phẩm nào đang khuyến mãi", hãy lấy danh sách các sản phẩm có khuyến mãi hiệu lực trong tháng được hỏi (hoặc tháng hiện tại nếu không chỉ định). Trả về thẻ sản phẩm gồm: ảnh, tên, giá gốc, giá khuyến mãi, tên khuyến mãi, thời gian áp dụng.
+# Nếu admin hỏi "tháng X nên khuyến mãi sản phẩm nào", hãy dựa vào nội dung sự kiện tháng X, tìm các sản phẩm phù hợp với chủ đề sự kiện (dựa vào tên, mô tả, danh mục), trả về thẻ sản phẩm phù hợp.
+# """
 @app.route('/api/adminchat', methods=['POST'])
 def admin_chat():
     try:
@@ -596,12 +763,18 @@ def admin_chat():
             return jsonify({"status": "error", "message": "Vui lòng nhập câu hỏi."}), 400
 
         now = datetime.now()
-        thang = now.month
-        nam = now.year
-        doanh_thu_loi_nhuan = lay_doanh_thu_loi_nhuan(thang, nam)
+        # Phân tích tháng/năm từ câu hỏi
+        thang_hoi, nam_hoi = extract_month_year_from_text(message)
+        if thang_hoi is not None and nam_hoi is not None:
+            thang = thang_hoi
+            nam = nam_hoi
+        else:
+            thang = now.month
+            nam = now.year
+        doanh_thu_loi_nhuan = lay_doanh_thu_loi_nhuan_theo_thang_nam(thang, nam)
         san_pham_ban_chay = lay_san_pham_ban_chay(thang, nam)
         thong_ke_don_hang = lay_thong_ke_don_hang(thang, nam)
-        chien_luoc = tao_chien_luoc_kinh_doanh(now)
+        chien_luoc = tao_chien_luoc_kinh_doanh(None, thang, nam)
         # Có thể lấy thêm các số liệu khác nếu muốn
 
         prompt = f"""
