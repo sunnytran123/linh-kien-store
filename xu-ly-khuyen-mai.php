@@ -78,51 +78,71 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     
     // Xử lý thêm khuyến mãi mới
-    if (isset($_POST['add_khuyenmai']) && !empty($_POST['khuyenmaiid'])) {
+    if (isset($_POST['add_khuyenmai'])) {
         try {
             $khuyenmaiid = intval($_POST['khuyenmaiid']);
             $tenkhuyenmai = $_POST['tenkhuyenmai'];
-            $giatri = str_replace([',', '.'], '', $_POST['giatri']);
+            $giatri = str_replace([',', '.'], '', $_POST['giatri']); // Xử lý giá trị giảm giá
             $ngaybatdau = $_POST['ngaybatdau'];
             $ngayketthuc = $_POST['ngayketthuc'];
             $sanpham = isset($_POST['sanpham']) ? $_POST['sanpham'] : [];
 
-            $conn->begin_transaction();
+            $conn->begin_transaction(); // Bắt đầu giao dịch
 
-            // Cập nhật khuyến mãi
-            $sql = "UPDATE khuyenmai SET tenkhuyenmai=?, giatri=?, ngaybatdau=?, ngayketthuc=? WHERE khuyenmaiid=?";
-            $stmt = $conn->prepare($sql);
-            $stmt->bind_param("sdssi", $tenkhuyenmai, $giatri, $ngaybatdau, $ngayketthuc, $khuyenmaiid);
-            if (!$stmt->execute()) {
-                throw new Exception("Không thể cập nhật khuyến mãi: " . $stmt->error);
+            // Kiểm tra xem khuyến mãi đã tồn tại chưa (nếu có khuyenmaiid)
+            if ($khuyenmaiid > 0) {
+                // Cập nhật khuyến mãi cũ
+                $sql_update = "UPDATE khuyenmai SET tenkhuyenmai=?, giatri=?, ngaybatdau=?, ngayketthuc=? WHERE khuyenmaiid=?";
+                $stmt_update = $conn->prepare($sql_update);
+                $stmt_update->bind_param("sdssi", $tenkhuyenmai, $giatri, $ngaybatdau, $ngayketthuc, $khuyenmaiid);
+                
+                if (!$stmt_update->execute()) {
+                    throw new Exception("Không thể cập nhật khuyến mãi: " . $stmt_update->error);
+                }
+            } else {
+                // Nếu không có `khuyenmaiid`, thực hiện insert mới
+                $sql_insert = "INSERT INTO khuyenmai (tenkhuyenmai, giatri, ngaybatdau, ngayketthuc) VALUES (?, ?, ?, ?)";
+                $stmt_insert = $conn->prepare($sql_insert);
+                $stmt_insert->bind_param("sdss", $tenkhuyenmai, $giatri, $ngaybatdau, $ngayketthuc);
+                
+                if (!$stmt_insert->execute()) {
+                    throw new Exception("Không thể thêm khuyến mãi mới: " . $stmt_insert->error);
+                }
+
+                // Lấy ID của khuyến mãi vừa thêm
+                $khuyenmaiid = $stmt_insert->insert_id;
             }
 
-            // Xóa sản phẩm cũ
+            // Xóa các sản phẩm cũ liên kết với khuyến mãi này
             $sql_del = "DELETE FROM sanpham_khuyenmai WHERE khuyenmai_id=?";
             $stmt_del = $conn->prepare($sql_del);
             $stmt_del->bind_param("i", $khuyenmaiid);
             $stmt_del->execute();
 
-            // Thêm sản phẩm mới
+            // Thêm các sản phẩm mới vào khuyến mãi
             if (!empty($sanpham)) {
                 $sql_sp = "INSERT INTO sanpham_khuyenmai (khuyenmai_id, sanpham_id) VALUES (?, ?)";
                 $stmt_sp = $conn->prepare($sql_sp);
+
                 foreach ($sanpham as $sp_id) {
                     $stmt_sp->bind_param("ii", $khuyenmaiid, $sp_id);
                     if (!$stmt_sp->execute()) {
-                        throw new Exception("Không thể thêm sản phẩm khuyến mãi: " . $stmt_sp->error);
+                        throw new Exception("Không thể thêm sản phẩm vào khuyến mãi: " . $stmt_sp->error);
                     }
                 }
             }
 
+            // Commit giao dịch
             $conn->commit();
-            echo json_encode(['success' => true]);
+            echo json_encode(['success' => true, 'message' => 'Khuyến mãi và sản phẩm đã được cập nhật thành công.']);
         } catch (Exception $e) {
+            // Rollback nếu có lỗi
             $conn->rollback();
             echo json_encode(['success' => false, 'message' => $e->getMessage()]);
         }
         exit;
-    }
+}
+
 }
 
 header('Content-Type: application/json');

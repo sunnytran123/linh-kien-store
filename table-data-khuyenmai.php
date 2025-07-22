@@ -181,17 +181,19 @@ $result_sanpham = $conn->query($sql_sanpham);
                                 <?php
                                 if ($result->num_rows > 0) {
                                     while($row = $result->fetch_assoc()) {
-                                        $now = new DateTime();
-                                        $start = new DateTime($row['ngaybatdau']);
-                                        $end = new DateTime($row['ngayketthuc']);
-                                        
-                                        if ($now < $start) {
-                                            $status = '<span class="badge bg-warning">Sắp diễn ra</span>';
-                                        } elseif ($now > $end) {
-                                            $status = '<span class="badge bg-danger">Đã kết thúc</span>';
-                                        } else {
-                                            $status = '<span class="badge bg-success">Đang diễn ra</span>';
-                                        }
+                                    $now = new DateTime("now", new DateTimeZone('Asia/Ho_Chi_Minh'));  // Đặt múi giờ của Việt Nam
+                                    $start = new DateTime($row['ngaybatdau'], new DateTimeZone('Asia/Ho_Chi_Minh'));
+                                    $end = new DateTime($row['ngayketthuc'], new DateTimeZone('Asia/Ho_Chi_Minh'));
+
+                                    // So sánh ngày giờ
+                                    if ($now < $start) {
+                                        $status = '<span class="badge bg-warning">Sắp diễn ra</span>';
+                                    } elseif ($now > $end) {
+                                        $status = '<span class="badge bg-danger">Đã kết thúc</span>';
+                                    } else {
+                                        $status = '<span class="badge bg-success">Đang diễn ra</span>';
+                                    }
+
                                         ?>
                                         <tr>
                                             <td width="10"><input type="checkbox" name="check<?php echo $row['khuyenmaiid']; ?>" value="<?php echo $row['khuyenmaiid']; ?>"></td>

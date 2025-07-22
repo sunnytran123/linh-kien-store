@@ -684,13 +684,13 @@ def lay_san_pham_dang_khuyen_mai(thang=None, nam=None):
         # Lấy 1 ảnh đại diện duy nhất cho mỗi sản phẩm
         sanpham_dict = {}
         for row in result:
-            if row['sanphamid'] not in sanpham_dict:
-                d = dict(row)
+            d = dict(row) if not isinstance(row, dict) else row
+            if d['sanphamid'] not in sanpham_dict:
                 if not d.get('duongdan'):
                     d['duongdan'] = 'picture/no-image.png'
                 elif not str(d['duongdan']).startswith('picture/'):
                     d['duongdan'] = f"picture/{d['duongdan']}"
-                sanpham_dict[row['sanphamid']] = d
+                sanpham_dict[d['sanphamid']] = d
         return list(sanpham_dict.values())
     except Exception as e:
         print(f"Lỗi trong lay_san_pham_dang_khuyen_mai: {e}")
@@ -738,7 +738,7 @@ def goi_y_san_pham_khuyen_mai_theo_su_kien(su_kien, thang=None, nam=None, limit=
         conn.close()
         sanpham_list = []
         for row in result:
-            d = dict(row)
+            d = dict(row) if not isinstance(row, dict) else row
             if not d.get('duongdan'):
                 d['duongdan'] = 'picture/no-image.png'
             elif not str(d['duongdan']).startswith('picture/'):
@@ -754,23 +754,57 @@ def goi_y_san_pham_khuyen_mai_theo_su_kien(su_kien, thang=None, nam=None, limit=
 # Bạn là trợ lý quản trị shop. Khi admin hỏi "sản phẩm nào đang khuyến mãi", hãy lấy danh sách các sản phẩm có khuyến mãi hiệu lực trong tháng được hỏi (hoặc tháng hiện tại nếu không chỉ định). Trả về thẻ sản phẩm gồm: ảnh, tên, giá gốc, giá khuyến mãi, tên khuyến mãi, thời gian áp dụng.
 # Nếu admin hỏi "tháng X nên khuyến mãi sản phẩm nào", hãy dựa vào nội dung sự kiện tháng X, tìm các sản phẩm phù hợp với chủ đề sự kiện (dựa vào tên, mô tả, danh mục), trả về thẻ sản phẩm phù hợp.
 # """
+def render_admin_product_cards(data, title=None):
+    if not data:
+        return "Không có sản phẩm phù hợp."
+    html = '<div class="product-list" style="display:flex;flex-wrap:wrap;gap:6px;">'
+    for sp in data:
+        html += (
+            '<div class="product-card" style="width:140px;margin:6px 3px 6px 0;padding:6px;border-radius:10px;box-shadow:0 1px 6px rgba(0,0,0,0.07);background:#fff;display:inline-block;vertical-align:top;cursor:pointer;text-align:center;" '
+            f'onclick="window.location.href=\'ProductDetail.php?id={sp.get("sanphamid", "")}\';">'
+            f'<img src="{sp.get("duongdan", "picture/no-image.png")}" class="product-image" style="width:100%;height:90px;object-fit:cover;border-radius:7px;">'
+            f'<div class="product-name" style="font-size:0.95em;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:4px 0 2px 0;">{sp.get("tensanpham", "")}</div>'
+            f'<div class="product-price" style="color:#388e3c;font-size:0.97em;font-weight:bold">đ{sp.get("gia", "")}</div>'
+            + (f'<div class="product-price" style="color:#e53935;font-size:0.95em;">Giá KM: đ{sp.get("giakhuyenmai", "")}</div>' if sp.get("giakhuyenmai") else '')
+            + '</div>'
+        )
+    html += "</div>"
+    return html
+
 @app.route('/api/adminchat', methods=['POST'])
 def admin_chat():
     try:
         data = request.json or {}
-        message = data.get('message', '').strip()
+        message = data.get('message', '').strip().lower()
         if not message:
             return jsonify({"status": "error", "message": "Vui lòng nhập câu hỏi."}), 400
 
         now = datetime.now()
-        # Phân tích tháng/năm từ câu hỏi
         thang_hoi, nam_hoi = extract_month_year_from_text(message)
-        if thang_hoi is not None and nam_hoi is not None:
-            thang = thang_hoi
-            nam = nam_hoi
-        else:
-            thang = now.month
-            nam = now.year
+        thang = thang_hoi if thang_hoi is not None else now.month
+        nam = nam_hoi if nam_hoi is not None else now.year
+
+        # Nhận diện câu hỏi về sản phẩm đang khuyến mãi
+        if any(kw in message for kw in ['đang khuyến mãi', 'sản phẩm khuyến mãi', 'đang giảm giá', 'đang ưu đãi']):
+            sanpham_km = lay_san_pham_dang_khuyen_mai(thang, nam)
+            if sanpham_km:
+                html = render_admin_product_cards(sanpham_km, title=f"Sản phẩm đang khuyến mãi tháng {thang}/{nam}")
+                return jsonify({"status": "success", "bao_cao": html}), 200
+            else:
+                return jsonify({"status": "success", "bao_cao": f"Không có sản phẩm nào đang khuyến mãi trong tháng {thang}/{nam}."}), 200
+
+        # Nhận diện câu hỏi về sản phẩm nên khuyến mãi theo sự kiện
+        if any(kw in message for kw in ['nên khuyến mãi', 'nên giảm giá', 'nên ưu đãi']):
+            # Lấy nội dung sự kiện tháng được hỏi
+            chien_luoc = tao_chien_luoc_kinh_doanh(None, thang, nam)
+            su_kien = chien_luoc.get('su_kien','') + ' ' + chien_luoc.get('chien_luoc','')
+            sanpham_goiy = goi_y_san_pham_khuyen_mai_theo_su_kien(su_kien, thang, nam, limit=8)
+            if sanpham_goiy:
+                html = render_admin_product_cards(sanpham_goiy, title=f"Gợi ý sản phẩm nên khuyến mãi tháng {thang}/{nam} (theo sự kiện: {chien_luoc.get('su_kien','')})")
+                return jsonify({"status": "success", "bao_cao": html}), 200
+            else:
+                return jsonify({"status": "success", "bao_cao": f"Không tìm thấy sản phẩm phù hợp với sự kiện/tháng {thang}/{nam}."}), 200
+
         doanh_thu_loi_nhuan = lay_doanh_thu_loi_nhuan_theo_thang_nam(thang, nam)
         san_pham_ban_chay = lay_san_pham_ban_chay(thang, nam)
         thong_ke_don_hang = lay_thong_ke_don_hang(thang, nam)
