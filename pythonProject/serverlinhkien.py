@@ -317,6 +317,18 @@ def chat():
             print(f"Dữ liệu tìm được: {data}")
             response = generate_answer(data, message_text)
             print(f"Trả về câu trả lời: {response}")
+
+            # Nếu không trả lời được HOẶC trả lời có chứa các từ khóa xin lỗi, không có thông tin, v.v.
+            if (
+                response == "Xin lỗi, tôi gặp khó khăn khi xử lý yêu cầu."
+                or "Xin lỗi" in response
+                or "không có thông tin" in response
+                or "không thể giúp" in response
+                or "không thể trả lời" in response
+            ):
+                save_conversation(message_text, response, classification["request_type"])
+                return jsonify({"status": "success", "response": "Xin lỗi, tôi không thể trả lời câu hỏi này. Chờ admin trả lời nhé!"}), 200
+
             return jsonify({"status": "success", "response": response}), 200
 
         elif classification["request_type"] == "product_search":
@@ -335,6 +347,17 @@ def chat():
                         item['duongdan'] = f"picture/{duongdan_str}"
             response = generate_product_card(data, message_text)
             print(f"Trả về thẻ sản phẩm: {response}")
+            # Nếu không trả lời được HOẶC trả lời có chứa các từ khóa xin lỗi, không có thông tin, v.v.
+            if (
+                response == "Xin lỗi, tôi gặp khó khăn khi xử lý yêu cầu tìm kiếm sản phẩm."
+                or "Xin lỗi" in response
+                or "không có thông tin" in response
+                or "không thể giúp" in response
+                or "không thể trả lời" in response
+            ):
+                save_conversation(message_text, response, classification["request_type"])
+                return jsonify({"status": "success", "response": "Xin lỗi, tôi không thể trả lời câu hỏi này. Chờ admin trả lời nhé!"}), 200
+
             return jsonify({"status": "success", "response": response}), 200
 
         else:  # need_more_info
@@ -347,6 +370,113 @@ def chat():
         traceback.print_exc()
         return jsonify({"status": "error", "message": f"Đã xảy ra lỗi: {e}"}), 500
 
+
+def save_conversation(user_message, bot_response, request_type, status='waiting_for_admin'):
+    """Lưu cuộc trò chuyện vào bảng conversations với trạng thái mặc định là 'waiting_for_admin'"""
+    try:
+        conn = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database="shoplinhkien"
+        )
+        cursor = conn.cursor()
+        query = """
+            INSERT INTO conversations (user_message, bot_response, user_id, status)
+            VALUES (%s, %s, %s, %s)
+        """
+        cursor.execute(query, (user_message, bot_response, 1, status))  # Lưu với trạng thái được truyền vào
+        conn.commit()
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        print(f"Lỗi lưu cuộc trò chuyện: {e}")
+
+
+@app.route('/api/admin/reply', methods=['POST'])
+def admin_reply():
+    try:
+        data = request.json
+        conversation_id = data.get("conversation_id")
+        admin_message = data.get("admin_message")
+
+        if not conversation_id or not admin_message:
+            return jsonify({"status": "error", "message": "Vui lòng cung cấp thông tin đầy đủ"}), 400
+
+        # Cập nhật trạng thái và câu trả lời của admin
+        conn = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database="shoplinhkien"
+        )
+        cursor = conn.cursor()
+        query = """
+            UPDATE conversations
+            SET admin_message = %s, status = 'admin_responded'
+            WHERE id = %s
+        """
+        cursor.execute(query, (admin_message, conversation_id))
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        return jsonify({"status": "success", "message": "Trả lời của admin đã được lưu"}), 200
+
+    except Exception as e:
+        print(f"Lỗi trả lời của admin: {e}")
+        return jsonify({"status": "error", "message": "Đã xảy ra lỗi khi trả lời câu hỏi"}), 500
+
+
+
+@app.route('/api/admin/conversations', methods=['GET'])
+def admin_conversations():
+    try:
+        conn = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database="shoplinhkien"
+        )
+        cursor = conn.cursor(dictionary=True)
+        # Lấy tất cả các cuộc hội thoại
+        query = "SELECT id, user_message, bot_response, status, created_at, user_id FROM conversations ORDER BY created_at DESC"
+        cursor.execute(query)
+        conversations = cursor.fetchall()
+        cursor.close()
+        conn.close()
+
+        return jsonify({"status": "success", "conversations": conversations}), 200
+    except Exception as e:
+        print(f"Lỗi xem cuộc trò chuyện: {e}")
+        return jsonify({"status": "error", "message": "Đã xảy ra lỗi khi xem cuộc trò chuyện"}), 500
+
+
+
+@app.route('/api/admin/conversation/<int:conversation_id>', methods=['GET'])
+def get_conversation(conversation_id):
+    try:
+        conn = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database="shoplinhkien"
+        )
+        cursor = conn.cursor(dictionary=True)
+        query = "SELECT * FROM conversations WHERE id = %s"
+        cursor.execute(query, (conversation_id,))
+        conversation = cursor.fetchone()
+        cursor.close()
+        conn.close()
+
+        if conversation:
+            return jsonify({"status": "success", "conversation": conversation}), 200
+        else:
+            return jsonify({"status": "error", "message": "Cuộc trò chuyện không tồn tại"}), 404
+
+    except Exception as e:
+        print(f"Lỗi lấy cuộc trò chuyện: {e}")
+        return jsonify({"status": "error", "message": "Đã xảy ra lỗi khi lấy cuộc trò chuyện"}), 500
 
 
 # Hàm nhỏ: Lấy doanh thu và lợi nhuận
