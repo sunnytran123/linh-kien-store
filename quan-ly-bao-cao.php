@@ -382,12 +382,6 @@ $result_nhanvienmoi = $conn->query($sql_nhanvienmoi);
             </div>
         </div>
 
-        <div style="margin: 20px 0;">
-    <input type="text" id="adminchat-input" placeholder="Nhập tin nhắn gửi adminchat" style="padding:5px; width:300px;">
-    <button onclick="sendAdminChatMessage()">Gửi</button>
-</div>
-<div id="adminchat-result" style="margin-top:10px; color:green;"></div>
-
     </main>
     <!-- Essential javascripts for application to work-->
     <script src="js/jquery-3.2.1.min.js"></script>

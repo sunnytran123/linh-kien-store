@@ -11,7 +11,7 @@ app = Flask(__name__)
 CORS(app)
 
 # Khởi tạo client OpenAI
-client = OpenAI(api_key="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")  # Đừng để API key trên code thật!  # Đừng để API key trên code thật!
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # Định nghĩa các công cụ (tools) cho function calling
 tools = [
